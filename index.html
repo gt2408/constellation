@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constellation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060912;
+  --bg-warm: #160f06;
+  --panel: #0a0e1a;
+  --rule: rgba(255,235,200,0.06);
+  --rule-strong: rgba(255,235,200,0.12);
+  --text-primary: #f5e9d4;
+  --text-secondary: #c8b890;
+  --text-muted: #7a7058;
+  --amber: #f4b266;
+  --amber-soft: #e6d4a8;
+  --amber-deep: #c98e3e;
+  --amber-glow: rgba(244,178,102,0.45);
+  --open-seat-stroke: rgba(180,165,130,0.42);
+  --serif: 'Newsreader', Georgia, serif;
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow:hidden}
+
+/* ── SCREENS ── */
+#app{position:relative;width:100vw;height:100vh;overflow:hidden}
+.screen{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(ellipse 1300px 1000px at 50% 50%,var(--bg-warm) 0%,transparent 65%),var(--bg);opacity:0;pointer-events:none;transition:opacity 500ms ease;overflow:hidden}
+.screen.active{opacity:1;pointer-events:auto}
+
+/* ── ZOOM TRANSITIONS L1 ↔ CHAMBER ── */
+.screen.zooming{transition:transform 700ms cubic-bezier(.2,.7,.2,1),opacity 500ms ease !important}
+.stage{position:absolute;inset:0;overflow:hidden}
+.constellation{width:100%;height:100%}
+
+/* ── SKY ROTATION ── */
+.spin{transform-origin:0 0;animation:spinSky 1140s linear infinite}
+@keyframes spinSky{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.counter-rot{animation:spinRev 1140s linear infinite}
+@keyframes spinRev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+#screen-chamber .spin,#screen-chamber .counter-rot{animation-delay:-380s}
+
+/* ── STARFIELD ── */
+.star{fill:#f5e9d4}.star.cool{fill:#c4d2e8}.star.warm{fill:#f0c898}
+.star.bright{filter:drop-shadow(0 0 1.4px rgba(245,233,212,0.85))}
+.twinkle-a{animation:twinkle 3.4s ease-in-out infinite .1s}
+.twinkle-b{animation:twinkle 4.1s ease-in-out infinite .9s}
+.twinkle-c{animation:twinkle 5.2s ease-in-out infinite 1.7s}
+.twinkle-d{animation:twinkle 3.8s ease-in-out infinite 2.4s}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+
+/* ── WISPS ── */
+.wisp{transform-box:fill-box;transform-origin:center}
+.wisp-a{animation:wispA 90s ease-in-out infinite alternate}
+.wisp-b{animation:wispB 110s ease-in-out infinite alternate}
+.wisp-c{animation:wispC 130s ease-in-out infinite alternate}
+@keyframes wispA{0%{transform:translate(0,0) scale(1);opacity:.55}100%{transform:translate(45px,-30px) scale(1.08);opacity:.7}}
+@keyframes wispB{0%{transform:translate(0,0) scale(1);opacity:.45}100%{transform:translate(-35px,40px) scale(1.06);opacity:.6}}
+@keyframes wispC{0%{transform:translate(0,0) scale(1);opacity:.55}100%{transform:translate(25px,35px) scale(1.1);opacity:.65}}
+
+/* ── SIGNALS ── */
+.signal{opacity:.55}
+.s-a{animation:sTwinkle 2.6s ease-in-out infinite .2s}
+.s-b{animation:sTwinkle 3.1s ease-in-out infinite 1.1s}
+.s-c{animation:sTwinkle 2.9s ease-in-out infinite .6s}
+.s-d{animation:sTwinkle 3.4s ease-in-out infinite 1.8s}
+@keyframes sTwinkle{0%,100%{opacity:.3}50%{opacity:.88}}
+
+/* ── NODES & LABELS ── */
+.node-label-anchor{font-family:var(--serif);font-weight:400;font-size:14px;fill:var(--amber);letter-spacing:.005em}
+.node-label-known{font-family:var(--serif);font-weight:400;font-size:11px;fill:var(--text-secondary);letter-spacing:.005em;opacity:.82}
+.node{transition:opacity 300ms ease;cursor:pointer}
+.node:hover{filter:brightness(1.15)}
+
+/* ── OPEN SEATS ── */
+.empty-seat-halo{fill:rgba(244,178,102,0.12);animation:emptyBreathe 3.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.empty-seat-ring{fill:rgba(244,178,102,0.06);stroke:rgba(244,178,102,0.85);stroke-width:1.4;stroke-dasharray:3 2.5;animation:emptyRing 3.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.empty-seat-dot{fill:rgba(255,230,178,0.95);filter:drop-shadow(0 0 3px rgba(244,178,102,0.85));animation:emptyDot 3.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.empty-seat-ripple{fill:none;stroke:rgba(244,178,102,0.75);stroke-width:1;transform-origin:center;transform-box:fill-box;animation:emptyPing 3.6s ease-out infinite}
+@keyframes emptyBreathe{0%,100%{opacity:.55;transform:scale(.88)}50%{opacity:1;transform:scale(1.10)}}
+@keyframes emptyRing{0%,100%{opacity:.80;transform:scale(.96)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes emptyDot{0%,100%{opacity:.80;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes emptyPing{0%{opacity:.85;transform:scale(.55);stroke-width:1.3}70%{opacity:.10;stroke-width:.6}100%{opacity:0;transform:scale(2.6);stroke-width:.4}}
+.seat-prompt{font-family:var(--serif);font-style:italic;font-weight:400;font-size:11px;fill:var(--text-secondary);opacity:0;transition:opacity 200ms ease;letter-spacing:.005em;pointer-events:none}
+.node-open:hover .seat-prompt{opacity:.78}
+
+/* ── VOID CORE + RIM ── */
+.core-spark{animation:sparkPulse 5s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes sparkPulse{0%,100%{opacity:.45}50%{opacity:.85}}
+.rim-arc{fill:none;stroke-linecap:round;transition:all 1s ease}
+.rim-arc.bright{stroke:rgba(244,178,102,0.85);stroke-width:2.5;filter:drop-shadow(0 0 4px rgba(244,178,102,0.55))}
+.rim-arc.dim{stroke:rgba(244,178,102,0.42);stroke-width:1.4;stroke-dasharray:2 3}
+.well-contour{fill:none;stroke:rgba(244,178,102,0.10);stroke-width:.6;stroke-dasharray:1 5}
+.gap-label{font-family:var(--serif);font-style:italic;font-weight:400;font-size:11.5px;fill:rgba(244,178,102,0.78);letter-spacing:.04em;cursor:pointer}
+.gap-label .gap-name{font-weight:500;fill:rgba(244,178,102,0.95)}
+.gap-group{animation:gapBreathe 6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.gap-group.delayed{animation-delay:-3s}
+@keyframes gapBreathe{0%,100%{opacity:.75}50%{opacity:1}}
+
+/* ── TOOLBAR ── */
+.toolbar{position:absolute;top:28px;left:40px;right:40px;display:flex;align-items:flex-start;justify-content:space-between;z-index:5}
+.brand h1{font-family:var(--serif);font-weight:400;font-size:19px;color:var(--text-primary);letter-spacing:.005em;line-height:1.1}
+.brand .subtitle{margin-top:4px;font-family:var(--sans);font-weight:300;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+.tools{display:flex;align-items:center;gap:18px}
+.search{width:280px;background:transparent;border:none;border-bottom:1px solid var(--rule-strong);color:var(--text-primary);font-family:var(--sans);font-weight:300;font-size:13px;padding:6px 4px 8px;letter-spacing:.01em}
+.search::placeholder{color:var(--text-muted);font-weight:300}
+.search:focus{outline:none;border-bottom-color:var(--amber)}
+.help{background:transparent;border:1px solid var(--rule-strong);color:var(--text-muted);width:28px;height:28px;border-radius:50%;font-family:var(--serif);font-weight:400;font-size:13px;cursor:pointer}
+
+/* ── FOOTER ── */
+.footer{position:absolute;left:40px;right:40px;bottom:24px;display:flex;justify-content:space-between;align-items:flex-end;z-index:5;pointer-events:none}
+.zoom-hint{font-family:var(--sans);font-weight:300;font-size:10px;color:var(--text-muted);letter-spacing:.18em;text-transform:uppercase;opacity:.7}
+.timestamp{font-family:var(--serif);font-weight:400;font-size:11.5px;color:var(--text-muted);letter-spacing:.32em;text-transform:uppercase}
+
+/* ── CHAT COMPOSER (L1) ── */
+.chat-zone{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);width:540px;text-align:center;z-index:6}
+.chat-input-wrap{position:relative;display:block}
+.chat-input{display:block;width:100%;background:transparent;border:none;border-bottom:1px solid var(--rule-strong);color:var(--text-primary);font-family:var(--serif);font-style:italic;font-weight:400;font-size:22px;text-align:center;padding:10px 56px 14px;letter-spacing:.005em}
+.chat-input::placeholder{color:var(--text-secondary);font-style:italic;opacity:.8}
+.chat-input:focus{outline:none;border-bottom-color:var(--amber)}
+.mic-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:transparent;border:1px solid rgba(244,178,102,0.32);color:rgba(244,178,102,0.85);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.mic-btn:hover{background:rgba(244,178,102,0.12);border-color:rgba(244,178,102,0.65);color:var(--amber)}
+.mic-btn:focus{outline:none}
+.mic-pulse{position:absolute;top:-2px;right:-2px;width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 6px rgba(244,178,102,0.85);animation:micPulse 2.4s ease-in-out infinite}
+@keyframes micPulse{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+.chat-hint{margin-top:14px;font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:18px;white-space:nowrap}
+.chat-hint kbd{display:inline-block;border:1px solid var(--rule-strong);border-radius:2px;padding:1px 5px;font-family:var(--sans);font-size:9px;color:var(--text-secondary);margin-right:2px;letter-spacing:0}
+.chat-hint .sep{width:1px;height:10px;background:var(--rule-strong);display:inline-block}
+
+/* ── SIDE PANEL ── */
+.panel-side{position:absolute;top:0;right:0;width:480px;height:100%;background:var(--panel);border-left:1px solid var(--rule-strong);z-index:20;display:flex;flex-direction:column;padding:56px 44px 32px;transform:translateX(100%);transition:transform 400ms cubic-bezier(.2,.7,.2,1)}
+.panel-side.open{transform:translateX(0)}
+.panel-side .close-btn{position:absolute;top:22px;right:24px;background:transparent;border:none;color:var(--text-muted);font-family:var(--sans);font-size:18px;line-height:1;cursor:pointer;transition:color .2s}
+.panel-side .close-btn:hover{color:var(--text-primary)}
+.panel-eyebrow{font-family:var(--sans);font-weight:400;font-size:10px;color:var(--text-muted);letter-spacing:.26em;text-transform:uppercase;margin-bottom:14px}
+.panel-subject{font-family:var(--serif);font-weight:400;font-size:26px;color:var(--text-primary);line-height:1.2;padding-bottom:22px;margin-bottom:24px;border-bottom:1px solid var(--rule);letter-spacing:.005em}
+.panel-subject .pill{display:inline-block;margin-left:10px;padding:3px 10px 4px;border:1px solid rgba(244,178,102,0.32);border-radius:999px;color:var(--amber);font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.20em;text-transform:uppercase;vertical-align:middle}
+.panel-subject .pill.rim-pill{border-color:rgba(244,178,102,0.55);background:rgba(244,178,102,0.08)}
+.conv{flex:1;display:flex;flex-direction:column;gap:22px;overflow-y:auto;padding-right:4px}
+.msg-ai{font-family:var(--serif);font-style:italic;font-weight:400;font-size:16px;line-height:1.55;color:var(--text-secondary);text-wrap:pretty}
+.msg-ai em{color:var(--amber);font-style:italic}
+.msg-user{font-family:var(--serif);font-weight:400;font-size:15px;line-height:1.55;color:var(--text-primary);text-align:right;padding-left:48px;text-wrap:pretty}
+.action-row{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.action-pill{display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--amber);color:var(--amber);font-family:var(--sans);font-weight:400;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;padding:7px 14px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s;white-space:nowrap}
+.action-pill:hover{background:var(--amber);color:var(--bg)}
+.action-pill.ghost{border-color:var(--rule-strong);color:var(--text-muted)}
+.action-pill.ghost:hover{background:transparent;color:var(--text-secondary);border-color:var(--text-muted)}
+.panel-composer{border-top:1px solid var(--rule);padding:16px 0 0;margin-top:22px;display:flex;align-items:center;gap:10px}
+.panel-composer-input{flex:1;background:transparent;border:none;color:var(--text-primary);font-family:var(--serif);font-style:italic;font-size:14px;padding:4px 0}
+.panel-composer-input::placeholder{color:var(--text-muted);opacity:.6}
+.panel-composer-input:focus{outline:none}
+.panel-composer-hint{font-family:var(--sans);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+.msg-ai.streaming::after{content:'';display:inline-block;width:6px;height:14px;background:var(--amber-soft);margin-left:3px;animation:blink 800ms step-end infinite;vertical-align:text-bottom}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── CONSTELLATION DIM (when panel open) ── */
+.screen.dimmed .constellation{opacity:.25;transition:opacity 400ms ease}
+
+/* ── CHAMBER ── */
+#screen-chamber{background:radial-gradient(ellipse 1300px 1000px at 50% 50%,rgba(22,15,6,0.6) 0%,transparent 65%),var(--bg)}
+.chamber-bar{position:absolute;top:28px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;z-index:7;font-family:var(--sans)}
+.chamber-back{display:inline-flex;align-items:center;gap:10px;color:var(--text-secondary);text-decoration:none;font-weight:400;font-size:11px;letter-spacing:.26em;text-transform:uppercase;transition:color .2s;cursor:pointer;background:none;border:none}
+.chamber-back:hover{color:var(--text-primary)}
+.chamber-back-arrow{font-family:var(--serif);font-size:16px;line-height:1;color:var(--amber)}
+.chamber-back-text{padding-bottom:1px}
+.chamber-title{font-family:var(--serif);font-style:italic;font-weight:400;font-size:12px;color:var(--text-muted);letter-spacing:.18em;text-transform:uppercase}
+.chamber-close{font-family:var(--sans);font-size:10px;color:var(--text-muted);letter-spacing:.22em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px}
+.chamber-close kbd{display:inline-block;border:1px solid var(--rule-strong);border-radius:2px;padding:1px 6px;font-family:var(--sans);font-size:9px;color:var(--text-secondary);letter-spacing:.05em;text-transform:lowercase}
+.chamber-anchor circle{filter:drop-shadow(0 0 10px rgba(244,178,102,0.32))}
+.chamber-anchor-spark{animation:chamberSpark 5.5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes chamberSpark{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.25)}}
+.halo-cloud{transform-box:fill-box;transform-origin:center}
+.halo-drift-a{animation:haloDriftA 160s ease-in-out infinite alternate}
+.halo-drift-b{animation:haloDriftB 200s ease-in-out infinite alternate}
+.halo-drift-c{animation:haloDriftC 180s ease-in-out infinite alternate}
+.halo-drift-d{animation:haloDriftD 220s ease-in-out infinite alternate}
+@keyframes haloDriftA{0%{transform:translate(0,0) scale(1);opacity:.65}100%{transform:translate(30px,-20px) scale(1.06);opacity:.75}}
+@keyframes haloDriftB{0%{transform:translate(0,0) scale(1);opacity:.78}100%{transform:translate(-40px,25px) scale(1.05);opacity:.88}}
+@keyframes haloDriftC{0%{transform:translate(0,0) scale(1);opacity:.62}100%{transform:translate(25px,30px) scale(1.07);opacity:.72}}
+@keyframes haloDriftD{0%{transform:translate(0,0) scale(1);opacity:.68}100%{transform:translate(-35px,-25px) scale(1.06);opacity:.80}}
+.chamber-anchor-caption{position:absolute;left:50%;top:calc(50% + 90px);transform:translateX(-50%);text-align:center;z-index:4;pointer-events:none;white-space:nowrap}
+.chamber-anchor-name{font-family:var(--serif);font-weight:500;font-size:18px;color:var(--amber);letter-spacing:.005em}
+.chamber-anchor-meta{margin-top:6px;font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:rgba(244,178,102,0.55)}
+.chamber-connector{fill:none;stroke-linecap:round}
+.chamber-connector.tier-1{stroke:rgba(244,178,102,0.16);stroke-width:.7;stroke-dasharray:1 5}
+.chamber-connector.tier-2{stroke:rgba(244,178,102,0.10);stroke-width:.55;stroke-dasharray:1 6}
+.chamber-connector.tier-3{stroke:rgba(244,178,102,0.06);stroke-width:.45;stroke-dasharray:1 7}
+.chamber-mem{cursor:pointer;transition:opacity .2s}
+.chamber-mem:hover{filter:brightness(1.12)}
+.chamber-mem-body{transform-box:fill-box;transform-origin:center}
+.chamber-mem.tier-1 .chamber-mem-body{animation:memBreathe 6.5s ease-in-out infinite}
+.chamber-mem.tier-2 .chamber-mem-body{animation:memBreathe 7.5s ease-in-out infinite 1.2s}
+.chamber-mem.tier-3 .chamber-mem-body{animation:memBreathe 8.5s ease-in-out infinite 2.4s}
+@keyframes memBreathe{0%,100%{opacity:.88}50%{opacity:1}}
+.chamber-mem-label{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:.005em;fill:var(--text-primary)}
+.chamber-mem-label.tier-1{font-size:16px;fill:var(--text-primary)}
+.chamber-mem-label.tier-2{font-size:13px;fill:var(--text-secondary)}
+.chamber-mem-label.tier-3{font-size:11px;fill:var(--text-muted);font-style:italic}
+
+/* ── MEMORY DRAFT ── */
+#screen-draft{background:radial-gradient(ellipse 1300px 1000px at 50% 50%,rgba(22,15,6,0.3) 0%,transparent 65%),var(--bg)}
+#screen-draft .constellation{opacity:.7}
+.draft-title-block{position:absolute;top:100px;left:50%;transform:translateX(-50%);width:720px;text-align:left;z-index:5}
+.draft-eyebrow{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.30em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px}
+.draft-title{font-family:var(--serif);font-weight:400;font-style:italic;font-size:32px;color:var(--amber);letter-spacing:.005em;line-height:1.15;margin-bottom:14px}
+.draft-sub{font-family:var(--serif);font-weight:400;font-size:15px;line-height:1.55;color:var(--text-secondary);max-width:560px;opacity:.85;text-wrap:pretty}
+.draft-thread{position:absolute;top:270px;bottom:180px;left:50%;transform:translateX(-50%);width:720px;z-index:5;display:flex;flex-direction:column;gap:28px;overflow-y:auto;padding-right:8px}
+.draft-turn{display:flex;align-items:flex-start;gap:14px}
+.ai-turn{justify-content:flex-start}
+.ai-marker{flex-shrink:0;width:26px;height:26px;margin-top:4px;border-radius:50%;border:1px solid rgba(244,178,102,0.32);display:inline-flex;align-items:center;justify-content:center;background:rgba(244,178,102,0.04)}
+.ai-marker-spark{width:5px;height:5px;border-radius:50%;background:var(--amber);box-shadow:0 0 6px rgba(244,178,102,0.95);animation:markerPulse 3.2s ease-in-out infinite}
+@keyframes markerPulse{0%,100%{opacity:.75;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+.ai-bubble{flex:1;max-width:640px}
+.ai-text{font-family:var(--serif);font-weight:400;font-size:17px;line-height:1.6;color:var(--text-primary);text-wrap:pretty;letter-spacing:.005em}
+.thought-process{margin-bottom:12px}
+.thought-process>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:4px 0;color:var(--text-muted);font-family:var(--sans);font-weight:400;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;transition:color .2s}
+.thought-process>summary::-webkit-details-marker{display:none}
+.thought-process>summary:hover{color:var(--text-secondary)}
+.thought-process[open]>summary{color:var(--text-secondary)}
+.tp-chevron{font-family:var(--serif);font-size:13px;line-height:1;transition:transform .2s;transform:translateY(-1px)}
+.thought-process[open] .tp-chevron{transform:translateY(-1px) rotate(90deg)}
+.tp-body{margin-top:10px;padding:12px 16px;border-left:1px solid rgba(244,178,102,0.32);font-family:var(--serif);font-style:italic;font-weight:400;font-size:14px;line-height:1.6;color:var(--text-secondary);background:rgba(244,178,102,0.03);text-wrap:pretty}
+.tp-body em{font-style:normal;color:var(--amber)}
+.ai-bubble.thinking{display:flex;align-items:center;min-height:26px}
+.thinking-row{display:inline-flex;align-items:center;gap:6px;padding:6px 0}
+.thinking-dot{width:5px;height:5px;border-radius:50%;background:var(--amber);opacity:.5;animation:thinkDot 1.4s ease-in-out infinite}
+.thinking-dot:nth-child(1){animation-delay:0s}
+.thinking-dot:nth-child(2){animation-delay:.2s}
+.thinking-dot:nth-child(3){animation-delay:.4s}
+@keyframes thinkDot{0%,60%,100%{opacity:.3;transform:scale(.85)}30%{opacity:1;transform:scale(1.15)}}
+.thinking-text{margin-left:8px;font-family:var(--serif);font-style:italic;font-weight:400;font-size:15px;color:var(--text-secondary);opacity:.78}
+.user-turn{justify-content:flex-end;flex-direction:column;align-items:flex-end;gap:6px}
+.user-bubble{max-width:480px;padding:14px 22px;background:rgba(244,178,102,0.14);border:1px solid rgba(244,178,102,0.32);border-radius:22px;font-family:var(--serif);font-weight:400;font-size:16px;line-height:1.55;color:var(--text-primary);text-wrap:pretty;letter-spacing:.005em}
+.user-meta{display:inline-flex;align-items:center;gap:8px;padding-right:4px}
+.user-time{font-family:var(--sans);font-weight:400;font-size:10px;color:var(--text-muted);letter-spacing:.18em;text-transform:lowercase}
+.user-dot{width:5px;height:5px;border-radius:50%;background:rgba(244,178,102,0.85);box-shadow:0 0 4px rgba(244,178,102,0.55)}
+.draft-composer{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);width:720px;z-index:6;display:flex;align-items:center;gap:12px;padding:14px 18px;background:rgba(13,18,30,0.55);border:1px solid var(--rule-strong);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.composer-plus{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:transparent;border:1px solid var(--rule-strong);color:var(--text-muted);font-family:var(--sans);font-size:18px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding-bottom:2px;transition:color .2s,border-color .2s}
+.composer-plus:hover{color:var(--text-secondary);border-color:var(--text-muted)}
+.composer-input-wide{flex:1;background:transparent;border:none;color:var(--text-primary);font-family:var(--serif);font-style:italic;font-weight:400;font-size:17px;padding:6px 4px;letter-spacing:.005em}
+.composer-input-wide::placeholder{color:var(--text-secondary);opacity:.7}
+.composer-input-wide:focus{outline:none}
+.composer-send{flex-shrink:0;width:34px;height:34px;border-radius:50%;background:var(--amber);border:none;color:var(--bg);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .2s}
+.composer-send:hover{background:#fbcb88}
+.draft-composer-hint{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);width:720px;z-index:6;text-align:center;font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:14px;white-space:nowrap}
+.draft-composer-hint kbd{display:inline-block;border:1px solid var(--rule-strong);border-radius:2px;padding:1px 5px;margin-right:4px;font-family:var(--sans);font-size:9px;color:var(--text-secondary);letter-spacing:0}
+.draft-composer-hint .sep{width:1px;height:9px;background:var(--rule-strong);display:inline-block}
+
+/* ── WOW MOMENT ── */
+.new-anchor-body{transform-box:fill-box;transform-origin:center;animation:newIn 1.6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes newIn{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+.new-anchor-pulse{fill:none;stroke:rgba(244,178,102,0.9);stroke-width:1.5;transform-box:fill-box;transform-origin:center;animation:newPulse 1.8s cubic-bezier(.2,.7,.2,1) both}
+@keyframes newPulse{0%{opacity:1;transform:scale(.5)}100%{opacity:0;transform:scale(2.6)}}
+.new-anchor-label{animation:newLabel 1.6s ease-out both .4s}
+@keyframes newLabel{0%{opacity:0}100%{opacity:1}}
+
+/* ── SEARCH PIN ── */
+.search-result-pin{position:absolute;top:280px;left:calc(50% - 360px);width:280px;z-index:4;pointer-events:none;text-align:right;opacity:0;transition:opacity 300ms ease}
+.search-result-pin.visible{opacity:1}
+.pin-eyebrow{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.30em;text-transform:uppercase;color:rgba(244,178,102,0.8);margin-bottom:14px}
+.pin-prose{font-family:var(--serif);font-style:italic;font-weight:400;font-size:16px;line-height:1.55;color:var(--text-secondary);text-wrap:pretty}
+.pin-cta{display:inline-block;margin-top:8px;font-style:normal;font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber)}
+
+/* ── MOBILE ── */
+.mobile-notice{display:none;position:fixed;inset:0;background:radial-gradient(ellipse 600px 700px at 50% 50%,var(--bg-warm) 0%,transparent 65%),var(--bg);font-family:var(--sans);color:var(--text-primary);z-index:100}
+.mobile-brand{position:absolute;top:56px;left:28px;z-index:5}
+.mobile-brand h1{font-family:var(--serif);font-weight:400;font-size:22px;color:var(--text-primary);line-height:1.1}
+.mobile-brand .subtitle{margin-top:6px;font-family:var(--sans);font-weight:300;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-muted)}
+.mobile-prompt{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:280px;z-index:5}
+.mobile-prose{font-family:var(--serif);font-style:italic;font-weight:400;font-size:22px;line-height:1.4;color:var(--text-secondary);margin-bottom:26px;text-wrap:pretty}
+.mobile-cta{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.30em;text-transform:uppercase;color:var(--text-muted)}
+.mobile-footer{position:absolute;bottom:28px;left:0;right:0;text-align:center}
+.mobile-footer .timestamp{font-size:10px;letter-spacing:.32em}
+@media(max-width:1099px){
+  .mobile-notice{display:block}
+  #app{display:none}
+}
+
+/* ── REDUCED MOTION ── */
+@media(prefers-reduced-motion:reduce){
+  .spin,.counter-rot,.star,.wisp,.signal,.core-spark,.gap-group,.empty-seat-halo,.empty-seat-ring,.empty-seat-dot,.empty-seat-ripple,.new-anchor-body,.new-anchor-pulse,.new-anchor-label,.chamber-anchor-spark,.chamber-mem-body,.mic-pulse,.ai-marker-spark,.thinking-dot,.halo-cloud{animation:none !important}
+  .zooming{transition:none !important}
+  .screen{transition:none !important}
+  .panel-side{transition:none !important}
+  .node{transition:none !important}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG GRADIENT DEFS -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <radialGradient id="coreGlowLargeFixed" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(201,142,62,0.32)"/>
+    <stop offset="20%" stop-color="rgba(201,142,62,0.22)"/>
+    <stop offset="40%" stop-color="rgba(201,142,62,0.13)"/>
+    <stop offset="60%" stop-color="rgba(201,142,62,0.06)"/>
+    <stop offset="80%" stop-color="rgba(201,142,62,0.02)"/>
+    <stop offset="100%" stop-color="rgba(201,142,62,0)"/>
+  </radialGradient>
+  <radialGradient id="wispWarm" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(244,178,102,0.30)"/>
+    <stop offset="20%" stop-color="rgba(232,168,92,0.22)"/>
+    <stop offset="40%" stop-color="rgba(218,156,80,0.14)"/>
+    <stop offset="60%" stop-color="rgba(208,148,70,0.07)"/>
+    <stop offset="82%" stop-color="rgba(201,142,62,0.02)"/>
+    <stop offset="100%" stop-color="rgba(201,142,62,0)"/>
+  </radialGradient>
+  <radialGradient id="wispCool" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(118,130,200,0.18)"/>
+    <stop offset="25%" stop-color="rgba(100,115,188,0.12)"/>
+    <stop offset="50%" stop-color="rgba(88,105,178,0.07)"/>
+    <stop offset="75%" stop-color="rgba(80,100,170,0.025)"/>
+    <stop offset="100%" stop-color="rgba(80,100,170,0)"/>
+  </radialGradient>
+  <radialGradient id="wispDeep" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(180,120,80,0.22)"/>
+    <stop offset="25%" stop-color="rgba(160,105,65,0.15)"/>
+    <stop offset="50%" stop-color="rgba(140,90,55,0.08)"/>
+    <stop offset="75%" stop-color="rgba(125,78,45,0.025)"/>
+    <stop offset="100%" stop-color="rgba(120,70,40,0)"/>
+  </radialGradient>
+  <radialGradient id="gAnchorAmber" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fde4be"/>
+    <stop offset="22%" stop-color="#f4b266" stop-opacity="0.95"/>
+    <stop offset="55%" stop-color="#d68a48" stop-opacity="0.45"/>
+    <stop offset="100%" stop-color="#a8632c" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gAnchorCopper" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fcd2b0"/>
+    <stop offset="22%" stop-color="#e08850" stop-opacity="0.95"/>
+    <stop offset="55%" stop-color="#b46038" stop-opacity="0.45"/>
+    <stop offset="100%" stop-color="#7a3a1c" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gAnchorGold" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fef0c8"/>
+    <stop offset="22%" stop-color="#e8c878" stop-opacity="0.95"/>
+    <stop offset="55%" stop-color="#c4a050" stop-opacity="0.40"/>
+    <stop offset="100%" stop-color="#806620" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gAnchorRose" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fde0d2"/>
+    <stop offset="22%" stop-color="#e8a890" stop-opacity="0.95"/>
+    <stop offset="55%" stop-color="#c07868" stop-opacity="0.40"/>
+    <stop offset="100%" stop-color="#7c4438" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gKnownCream" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fbf2d6"/>
+    <stop offset="30%" stop-color="#e6d4a8" stop-opacity="0.9"/>
+    <stop offset="70%" stop-color="#b8a878" stop-opacity="0.30"/>
+    <stop offset="100%" stop-color="#8a7a48" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gKnownWarm" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fbe8c0"/>
+    <stop offset="30%" stop-color="#e8d4a0" stop-opacity="0.9"/>
+    <stop offset="70%" stop-color="#b8a060" stop-opacity="0.30"/>
+    <stop offset="100%" stop-color="#866020" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gKnownBlue" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#edf2fa"/>
+    <stop offset="30%" stop-color="#b8c8e0" stop-opacity="0.85"/>
+    <stop offset="70%" stop-color="#7c90b8" stop-opacity="0.28"/>
+    <stop offset="100%" stop-color="#4a5878" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gKnownPaleRose" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fae0d8"/>
+    <stop offset="30%" stop-color="#e0c0b8" stop-opacity="0.85"/>
+    <stop offset="70%" stop-color="#a8807c" stop-opacity="0.28"/>
+    <stop offset="100%" stop-color="#704848" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gKnownCyan" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#e4f0f0"/>
+    <stop offset="30%" stop-color="#b0d0d8" stop-opacity="0.85"/>
+    <stop offset="70%" stop-color="#608890" stop-opacity="0.28"/>
+    <stop offset="100%" stop-color="#385058" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gSignal" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#f5e9d4"/>
+    <stop offset="40%" stop-color="#e6d4a8" stop-opacity="0.75"/>
+    <stop offset="100%" stop-color="#c8b890" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gWellOuter" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(4,6,14,0.88)"/>
+    <stop offset="30%" stop-color="rgba(5,7,16,0.72)"/>
+    <stop offset="55%" stop-color="rgba(6,9,18,0.50)"/>
+    <stop offset="78%" stop-color="rgba(6,9,18,0.20)"/>
+    <stop offset="100%" stop-color="rgba(6,9,18,0)"/>
+  </radialGradient>
+  <radialGradient id="gWellInner" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(2,3,8,0.96)"/>
+    <stop offset="40%" stop-color="rgba(2,3,8,0.78)"/>
+    <stop offset="70%" stop-color="rgba(2,3,8,0.45)"/>
+    <stop offset="90%" stop-color="rgba(2,3,8,0.15)"/>
+    <stop offset="100%" stop-color="rgba(2,3,8,0)"/>
+  </radialGradient>
+  <radialGradient id="gWellInteriorHome" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(82,50,22,0.20)"/>
+    <stop offset="50%" stop-color="rgba(40,26,12,0.18)"/>
+    <stop offset="100%" stop-color="rgba(2,3,8,0)"/>
+  </radialGradient>
+  <radialGradient id="gNebulaRose" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(220,110,140,0.32)"/>
+    <stop offset="25%" stop-color="rgba(200,95,125,0.22)"/>
+    <stop offset="50%" stop-color="rgba(160,70,105,0.12)"/>
+    <stop offset="75%" stop-color="rgba(110,45,80,0.04)"/>
+    <stop offset="100%" stop-color="rgba(80,30,60,0)"/>
+  </radialGradient>
+  <radialGradient id="gNebulaCrimson" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(190,70,50,0.40)"/>
+    <stop offset="35%" stop-color="rgba(155,55,38,0.22)"/>
+    <stop offset="70%" stop-color="rgba(115,38,22,0.08)"/>
+    <stop offset="100%" stop-color="rgba(80,30,15,0)"/>
+  </radialGradient>
+  <radialGradient id="gNebulaTeal" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(85,140,168,0.26)"/>
+    <stop offset="30%" stop-color="rgba(65,115,145,0.16)"/>
+    <stop offset="60%" stop-color="rgba(48,88,115,0.06)"/>
+    <stop offset="100%" stop-color="rgba(35,60,80,0)"/>
+  </radialGradient>
+  <radialGradient id="gNebulaViolet" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(135,90,175,0.22)"/>
+    <stop offset="35%" stop-color="rgba(105,70,140,0.13)"/>
+    <stop offset="70%" stop-color="rgba(70,45,100,0.04)"/>
+    <stop offset="100%" stop-color="rgba(45,28,70,0)"/>
+  </radialGradient>
+  <radialGradient id="gNebulaDeepGold" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,195,110,0.32)"/>
+    <stop offset="35%" stop-color="rgba(225,165,80,0.18)"/>
+    <stop offset="70%" stop-color="rgba(180,125,50,0.05)"/>
+    <stop offset="100%" stop-color="rgba(140,90,30,0)"/>
+  </radialGradient>
+  <radialGradient id="gMemAmber" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fff0d8"/>
+    <stop offset="28%" stop-color="#f4b266" stop-opacity="0.92"/>
+    <stop offset="60%" stop-color="#c98e3e" stop-opacity="0.38"/>
+    <stop offset="100%" stop-color="#a8632c" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gMemCream" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fbf2d6"/>
+    <stop offset="28%" stop-color="#ecd9a4" stop-opacity="0.92"/>
+    <stop offset="60%" stop-color="#b8a06c" stop-opacity="0.32"/>
+    <stop offset="100%" stop-color="#866020" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gMemGold" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fef0c8"/>
+    <stop offset="28%" stop-color="#e8c878" stop-opacity="0.92"/>
+    <stop offset="60%" stop-color="#b8923c" stop-opacity="0.32"/>
+    <stop offset="100%" stop-color="#806620" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+</svg>
+
+<!-- MOBILE FALLBACK -->
+<div class="mobile-notice">
+  <div class="mobile-brand"><h1>Constellation</h1><div class="subtitle">an identity interface for personal AI</div></div>
+  <div class="mobile-prompt">
+    <div class="mobile-prose">Constellation is designed for a wider sky.</div>
+    <div class="mobile-cta">Open on a desktop to explore.</div>
+  </div>
+  <div class="mobile-footer"></div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- L1 HOME -->
+  <div id="screen-l1" class="screen active">
+    <main class="stage">
+      <svg class="constellation" viewBox="-720 -450 1440 900" preserveAspectRatio="xMidYMid slice" shape-rendering="geometricPrecision">
+        <circle cx="0" cy="0" r="540" fill="url(#coreGlowLargeFixed)"/>
+        <g class="rotator" transform="translate(0,-80)">
+          <g class="spin" id="l1-spin"></g>
+        </g>
+      </svg>
+      <div class="search-result-pin" id="search-pin">
+        <div class="pin-eyebrow">1 match</div>
+        <div class="pin-prose">care lives only on your rim — no memory roots it yet.<br><span class="pin-cta">click the gap to begin →</span></div>
+      </div>
+    </main>
+    <header class="toolbar">
+      <div class="brand"><h1>Constellation</h1><div class="subtitle">an identity interface for personal AI</div></div>
+      <div class="tools">
+        <input class="search" id="search-input" type="search" placeholder="search values, memories, mentors…" aria-label="Search your constellation">
+        <button class="help" aria-label="Help">?</button>
+      </div>
+    </header>
+    <div class="chat-zone">
+      <div class="chat-input-wrap">
+        <input class="chat-input" id="l1-composer" type="text" placeholder="tell Constellation anything" aria-label="Tell Constellation something">
+        <button class="mic-btn" type="button" aria-label="Speak instead">
+          <svg viewBox="0 0 16 18" width="14" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/><path d="M3 8.5 Q3 13 8 13 Q13 13 13 8.5" fill="none"/><line x1="8" y1="13" x2="8" y2="15.5"/><line x1="5.5" y1="16" x2="10.5" y2="16"/></svg>
+          <span class="mic-pulse"></span>
+        </button>
+      </div>
+      <div class="chat-hint"><span><kbd>↵</kbd> to send</span><span class="sep"></span><span>or click a gap above</span></div>
+    </div>
+    <footer class="footer">
+      <div class="zoom-hint" id="l1-zoom-hint">scroll to zoom · see grouped memories</div>
+    </footer>
+  </div>
+
+  <!-- L2 MEMORY CHAMBER -->
+  <div id="screen-chamber" class="screen">
+    <main class="stage">
+      <svg class="constellation" viewBox="-720 -450 1440 900" preserveAspectRatio="xMidYMid slice" shape-rendering="geometricPrecision">
+        <g class="chamber-halo" id="chamber-halo"></g>
+        <g class="rotator">
+          <g class="spin" id="chamber-spin"></g>
+          <g id="chamber-connectors"></g>
+          <g class="chamber-anchor">
+            <circle cx="0" cy="0" r="70" fill="url(#gAnchorAmber)"/>
+            <circle cx="0" cy="0" r="4" fill="#fff4d8" class="chamber-anchor-spark"/>
+          </g>
+          <g id="chamber-memories"></g>
+        </g>
+      </svg>
+      <div class="chamber-anchor-caption">
+        <div class="chamber-anchor-name" id="chamber-anchor-name">precision (early home)</div>
+        <div class="chamber-anchor-meta" id="chamber-anchor-meta">12 memories · Formative</div>
+      </div>
+    </main>
+    <header class="chamber-bar">
+      <button class="chamber-back" id="chamber-back">
+        <span class="chamber-back-arrow">←</span>
+        <span class="chamber-back-text">Constellation</span>
+      </button>
+      <div class="chamber-title" id="chamber-title">a memory chamber</div>
+      <div class="chamber-close"><kbd>esc</kbd> to close</div>
+    </header>
+    <div class="chat-zone">
+      <div class="chat-input-wrap">
+        <input class="chat-input" type="text" placeholder="add another memory of precision…" aria-label="Add memory">
+        <button class="mic-btn" type="button" aria-label="Speak instead">
+          <svg viewBox="0 0 16 18" width="14" height="16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><rect x="5.5" y="1.5" width="5" height="9" rx="2.5"/><path d="M3 8.5 Q3 13 8 13 Q13 13 13 8.5" fill="none"/><line x1="8" y1="13" x2="8" y2="15.5"/><line x1="5.5" y1="16" x2="10.5" y2="16"/></svg>
+          <span class="mic-pulse"></span>
+        </button>
+      </div>
+      <div class="chat-hint"><span><kbd>↵</kbd> to send</span><span class="sep"></span><span>or click a memory to drill in</span></div>
+    </div>
+    <footer class="footer">
+      <div class="zoom-hint">every memory here speaks to precision</div>
+    </footer>
+  </div>
+
+  <!-- MEMORY DRAFT -->
+  <div id="screen-draft" class="screen">
+    <main class="stage">
+      <svg class="constellation" viewBox="-720 -450 1440 900" preserveAspectRatio="xMidYMid slice" shape-rendering="geometricPrecision">
+        <circle cx="0" cy="0" r="700" fill="url(#coreGlowLargeFixed)" opacity="0.55"/>
+        <g class="rotator"><g class="spin" id="draft-spin"></g></g>
+      </svg>
+    </main>
+    <header class="chamber-bar">
+      <button class="chamber-back" id="draft-back">
+        <span class="chamber-back-arrow">←</span>
+        <span class="chamber-back-text">Constellation</span>
+      </button>
+      <div class="chamber-title"><span style="color:var(--amber);margin-right:8px;font-size:11px">✦</span> a memory, in the making</div>
+      <div class="chamber-close"><kbd>esc</kbd> to close</div>
+    </header>
+    <div class="draft-title-block">
+      <div class="draft-eyebrow">FORMATIVE · OPEN SEAT</div>
+      <div class="draft-title">rooting a missing piece</div>
+      <div class="draft-sub">loss of mentor sits alone in your formative ring. let's name what — or who — stood beside it.</div>
+    </div>
+    <div class="draft-thread" id="draft-thread" data-surface="draft">
+      <div class="draft-turn ai-turn">
+        <span class="ai-marker" aria-hidden="true"><span class="ai-marker-spark"></span></span>
+        <div class="ai-bubble">
+          <details class="thought-process">
+            <summary><span class="tp-chevron">›</span><span class="tp-label">thought process</span></summary>
+            <div class="tp-body">an anchor named <em>loss</em> usually implies a person before the loss. this seat at 350° has been empty across 12 of your last 14 reflections — worth surfacing.</div>
+          </details>
+          <div class="ai-text">loss of mentor sits alone in your formative ring. there's usually someone beside it — a teacher, a coach, a first boss. someone who saw something in you before you did. who was that, for you?</div>
+        </div>
+      </div>
+      <div class="draft-turn user-turn">
+        <div class="user-bubble">my drama teacher in high school, Ms. Adler. she stayed after rehearsals when no one asked her to.</div>
+        <div class="user-meta"><span class="user-time">4:35 pm</span><span class="user-dot"></span></div>
+      </div>
+      <div class="draft-turn ai-turn">
+        <span class="ai-marker" aria-hidden="true"><span class="ai-marker-spark"></span></span>
+        <div class="ai-bubble thinking">
+          <div class="thinking-row"><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-text">listening for the moment…</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="draft-composer">
+      <button class="composer-plus" aria-label="Attach">+</button>
+      <input class="composer-input-wide" type="text" placeholder="share a memory, or change the subject…" aria-label="Continue">
+      <button class="composer-send" type="button" aria-label="Send">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 8 H13 M9 4 L13 8 L9 12"/></svg>
+      </button>
+    </div>
+    <div class="draft-composer-hint"><span><kbd>↵</kbd> send</span><span class="sep"></span><span>shift + ↵ for new line</span></div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <aside class="panel-side" id="panel">
+    <button class="close-btn" id="panel-close">×</button>
+    <div id="panel-content"></div>
+  </aside>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  DATA LAYER — transforms Eva v4 JSON into render arrays
+// ════════════════════════════════════════════════════
+const SEED_PATH = 'dummy dataset of Eva v4.json';
+const LS_KEY = 'constellation-data';
+
+const ORBITS = {
+  formative:   { r: 125, label: 'Formative',   count: '24 bedrock pieces' },
+  intentional: { r: 235, label: 'Intentional', count: '58 reflections' },
+  behaviour:   { r: 345, label: 'Behaviour',   count: '165 daily signals' },
+};
+
+const COLOR_GRADS = {
+  amber:'gAnchorAmber', copper:'gAnchorCopper', gold:'gAnchorGold', rose:'gAnchorRose',
+  cream:'gKnownCream', warmCream:'gKnownWarm', blue:'gKnownBlue',
+  paleRose:'gKnownPaleRose', cyan:'gKnownCyan',
+};
+
+const MEM_GRADS = { amber:'gMemAmber', copper:'gMemCopper', gold:'gMemGold', rose:'gMemRose', cream:'gMemCream', 'warm-cream':'gMemAmber', 'pale-rose':'gMemRose', cyan:'gMemCream', warmCream:'gMemAmber', paleRose:'gMemRose' };
+
+function normalizeColor(c) {
+  if (!c) return 'cream';
+  return c.replace(/-([a-z])/g, (_, l) => l.toUpperCase());
+}
+
+function transformDataset(ds) {
+  const nodes = [];
+  const twinkleClasses = ['s-a','s-b','s-c','s-d'];
+
+  (ds.anchors || []).forEach(a => {
+    nodes.push({
+      id: a.id, label: a.label, orbit: a.layer,
+      type: 'anchor', angle: a.position.angle,
+      aJit: a.position.angleJitter || 0, rJit: a.position.radiusJitter || 0,
+      color: normalizeColor(a.color),
+    });
+  });
+
+  (ds.knownPieces || []).forEach(kp => {
+    nodes.push({
+      id: kp.id, label: kp.label, orbit: kp.layer,
+      type: 'known', angle: kp.position.angle,
+      aJit: kp.position.angleJitter || 0, rJit: kp.position.radiusJitter || 0,
+      color: normalizeColor(kp.color),
+    });
+  });
+
+  (ds.openSeats || []).forEach(s => {
+    nodes.push({
+      id: s.id, orbit: s.layer, type: 'open',
+      angle: s.position.angle, aJit: 0, rJit: 0,
+      prompt: s.contextPrompt || '',
+    });
+  });
+
+  const signals = (ds.signals || [])
+    .filter(s => s.visualizationHint)
+    .map((s, i) => ({
+      angle: s.visualizationHint.angle,
+      jit: s.visualizationHint.jitter || 0,
+      tw: s.visualizationHint.twinkle ? twinkleClasses[i % 4] : null,
+    }));
+
+  const stateToKind = { rooted:'bright', forming:'dim', open:'gap' };
+  const rim = (ds.values || []).map(v => ({
+    name: v.name,
+    center: v.rimPosition,
+    kind: stateToKind[v.state] || 'gap',
+    prompt: v.quietNoticing || (v.state === 'open' ? 'awaiting a story' : undefined),
+  }));
+
+  const memoryGroups = {};
+  (ds.memories || []).forEach(m => {
+    if (!memoryGroups[m.anchorId]) memoryGroups[m.anchorId] = [];
+    memoryGroups[m.anchorId].push(m);
+  });
+
+  return { nodes, signals, rim, memoryGroups };
+}
+
+function memoriesForAnchor(memories, anchorId) {
+  const mems = memories[anchorId] || [];
+  const tierSizes = [26, 16, 10];
+  return mems.map((m, i) => {
+    const r = m.position?.radius || (195 + i * 25);
+    const tier = r < 210 ? 1 : r < 270 ? 2 : 3;
+    const col = normalizeColor(m.color);
+    const grad = MEM_GRADS[m.color] || MEM_GRADS[col] || 'gMemCream';
+    return {
+      id: m.id, label: m.label,
+      angle: m.position?.angle || (i * 73 - 75),
+      r, grad, size: tierSizes[tier - 1], tier,
+    };
+  });
+}
+
+// ─── Load or seed data ───
+let CONSTELLATION_RAW = null;
+let NODES, SIGNALS, RIM, MEMORY_GROUPS;
+
+async function loadData() {
+  const stored = localStorage.getItem(LS_KEY);
+  if (stored) {
+    try { CONSTELLATION_RAW = JSON.parse(stored); } catch {}
+  }
+  if (!CONSTELLATION_RAW) {
+    const resp = await fetch(SEED_PATH);
+    CONSTELLATION_RAW = await resp.json();
+    localStorage.setItem(LS_KEY, JSON.stringify(CONSTELLATION_RAW));
+  }
+  const { nodes, signals, rim, memoryGroups } = transformDataset(CONSTELLATION_RAW);
+  NODES = nodes;
+  SIGNALS = signals;
+  RIM = rim;
+  MEMORY_GROUPS = memoryGroups;
+
+  if (CONSTELLATION_RAW.layers) {
+    CONSTELLATION_RAW.layers.forEach(l => {
+      if (ORBITS[l.id]) ORBITS[l.id].count = `${l.defaultRadius} ${l.unitName}`;
+    });
+  }
+}
+
+function saveData() {
+  if (CONSTELLATION_RAW) localStorage.setItem(LS_KEY, JSON.stringify(CONSTELLATION_RAW));
+}
+
+const SIZES = { anchor:18, known:11, open:6 };
+const LABEL_OFFSET = { anchor:22, known:14 };
+
+// ════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════
+const polar = (deg, r) => {
+  const t = deg * Math.PI / 180;
+  return { x: r * Math.sin(t), y: -r * Math.cos(t) };
+};
+function nodePos(n) {
+  const o = ORBITS[n.orbit];
+  const a = n.angle + (n.aJit || 0);
+  const r = o.r + (n.rJit || 0);
+  return { ...polar(a, r), angle: a, r };
+}
+function labelAnchor(deg) {
+  const a = ((deg % 360) + 360) % 360;
+  if (a > 340 || a < 20) return { anchor:'middle', dy:-1 };
+  if (a > 160 && a < 200) return { anchor:'middle', dy:1 };
+  if (a >= 20 && a <= 160) return { anchor:'start', dy:0 };
+  return { anchor:'end', dy:0 };
+}
+function arcPath(r, s, e) {
+  const p1 = polar(s, r), p2 = polar(e, r);
+  const sw = ((e - s + 360) % 360);
+  return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${sw > 180 ? 1 : 0} 1 ${p2.x} ${p2.y}`;
+}
+function makeRng(seed) {
+  let s = seed;
+  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+}
+
+// ════════════════════════════════════════════════════
+//  SVG GENERATORS
+// ════════════════════════════════════════════════════
+function genStars(seed, count, w, h) {
+  seed = seed || 1; count = count || 460; w = w || 2400; h = h || 1400;
+  const rand = makeRng(seed);
+  let s = '';
+  for (let i = 0; i < count; i++) {
+    const x = (rand() - 0.5) * w;
+    const y = (rand() - 0.5) * h;
+    if (Math.hypot(x, y) < 110) continue;
+    const bright = rand() < 0.06;
+    const r = bright ? 1.3 + rand() * 0.9 : 0.55 + rand() * 0.75;
+    const op = 0.32 + rand() * 0.62;
+    const cr = rand();
+    let cls = 'star';
+    if (bright) cls += ' bright';
+    if (cr < 0.10) cls += ' cool';
+    else if (cr < 0.25) cls += ' warm';
+    const tr = rand();
+    if (tr < 0.025) cls += ' twinkle-a';
+    else if (tr < 0.05) cls += ' twinkle-b';
+    else if (tr < 0.075) cls += ' twinkle-c';
+    else if (tr < 0.10) cls += ' twinkle-d';
+    s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(2)}" opacity="${op.toFixed(2)}" class="${cls}"/>`;
+  }
+  return s;
+}
+
+function genWisps() {
+  return `<ellipse class="wisp wisp-a" cx="-280" cy="-200" rx="380" ry="240" fill="url(#wispWarm)" opacity="0.6"/>
+<ellipse class="wisp wisp-b" cx="280" cy="220" rx="340" ry="220" fill="url(#wispCool)" opacity="0.5"/>
+<ellipse class="wisp wisp-c" cx="-100" cy="260" rx="300" ry="180" fill="url(#wispDeep)" opacity="0.55"/>`;
+}
+
+function genSignals() {
+  return SIGNALS.map(s => {
+    const r = ORBITS.behaviour.r + s.jit;
+    const p = polar(s.angle, r);
+    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="url(#gSignal)" class="signal${s.tw ? ' ' + s.tw : ''}" data-signal="1"/>`;
+  }).join('');
+}
+
+function genVoidCore(careOverride) {
+  let arcs = '', gaps = '';
+  const rimR = 64, span = 60;
+  RIM.forEach((v, i) => {
+    const start = v.center - span / 2, end = v.center + span / 2;
+    const kind = (careOverride && v.name === 'care') ? careOverride : v.kind;
+    if (kind === 'gap') {
+      const lp = polar(v.center, rimR + 22);
+      const a = ((v.center % 360) + 360) % 360;
+      let anc = 'middle';
+      if (a > 20 && a < 160) anc = 'start';
+      else if (a > 200 && a < 340) anc = 'end';
+      gaps += `<g class="gap-group${i % 2 === 0 ? ' delayed' : ''}" data-gap="${v.name}" style="cursor:pointer">
+        <text x="${lp.x.toFixed(1)}" y="${lp.y.toFixed(1)}" text-anchor="${anc}" dominant-baseline="middle" class="gap-label counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">
+          <tspan class="gap-name">${v.name}</tspan>
+        </text>
+      </g>`;
+    } else {
+      arcs += `<path d="${arcPath(rimR, start, end)}" class="rim-arc ${kind}" data-rim="${v.name}"/>`;
+    }
+  });
+  return `<g class="core-group core-negative">
+    <circle cx="0" cy="0" r="260" fill="url(#gWellOuter)"/>
+    <circle cx="0" cy="0" r="160" fill="url(#gWellInner)"/>
+    <circle cx="0" cy="0" r="62" fill="url(#gWellInteriorHome)"/>
+    <circle cx="0" cy="0" r="36" class="well-contour"/>
+    <g class="rim" id="rim-arcs">${arcs}</g>
+    <g id="gap-labels">${gaps}</g>
+    <circle cx="0" cy="0" r="2" fill="#fff4d8" class="core-spark"/>
+  </g>`;
+}
+
+function genNodes() {
+  let s = '';
+  NODES.forEach((n, idx) => {
+    const p = nodePos(n);
+    if (n.type === 'open') {
+      const phase = (idx % 4) * -1.1;
+      const rPhase = (idx % 3) * -1.3;
+      const lbl = labelAnchor(p.angle);
+      const lp = polar(p.angle, p.r + 20);
+      s += `<g class="node node-open" data-id="${n.id}" data-type="open">
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="10" class="empty-seat-ripple" style="animation-delay:${rPhase}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="10" class="empty-seat-ripple delayed" style="animation-delay:${(rPhase - 1.8)}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="20" class="empty-seat-halo" style="animation-delay:${phase}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="10" class="empty-seat-ring" style="animation-delay:${phase}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" class="empty-seat-dot"/>
+        <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="seat-prompt counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">${n.prompt || ''}</text>
+      </g>`;
+    } else {
+      const size = SIZES[n.type];
+      const grad = COLOR_GRADS[n.color] || 'gAnchorAmber';
+      const lbl = labelAnchor(p.angle);
+      const lp = polar(p.angle, p.r + LABEL_OFFSET[n.type]);
+      const labelCls = n.type === 'anchor' ? 'node-label-anchor' : 'node-label-known';
+      s += `<g class="node node-${n.type}" data-id="${n.id}" data-type="${n.type}">
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${size}" fill="url(#${grad})"/>
+        <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="${labelCls} counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">${n.label}</text>
+      </g>`;
+    }
+  });
+  return s;
+}
+
+function genChamberHalo() {
+  return `<circle cx="0" cy="0" r="640" fill="url(#coreGlowLargeFixed)"/>
+<ellipse class="halo-cloud halo-drift-a" cx="-50" cy="20" rx="340" ry="260" fill="url(#gNebulaDeepGold)" opacity="0.65"/>
+<ellipse class="halo-cloud" cx="0" cy="0" rx="220" ry="180" fill="url(#gNebulaCrimson)" opacity="0.85"/>
+<ellipse class="halo-cloud halo-drift-b" cx="220" cy="-130" rx="320" ry="260" fill="url(#gNebulaRose)" opacity="0.78"/>
+<ellipse class="halo-cloud halo-drift-c" cx="280" cy="180" rx="280" ry="200" fill="url(#gNebulaViolet)" opacity="0.62"/>
+<ellipse class="halo-cloud halo-drift-d" cx="-280" cy="180" rx="340" ry="260" fill="url(#gNebulaTeal)" opacity="0.68"/>`;
+}
+
+function genChamberMemories(anchorId) {
+  const chamberMems = memoriesForAnchor(MEMORY_GROUPS, anchorId || state.chamberAnchor || 'precision-early-home');
+  let conn = '', mem = '';
+  chamberMems.forEach(m => {
+    const p = polar(m.angle, m.r);
+    conn += `<line x1="0" y1="0" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" class="chamber-connector tier-${m.tier}"/>`;
+    const lp = polar(m.angle, m.r + m.size + 14);
+    const lbl = labelAnchor(m.angle);
+    mem += `<g class="chamber-mem tier-${m.tier}" data-mem="${m.id}">
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${m.size}" fill="url(#${m.grad})" class="chamber-mem-body"/>
+      <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="chamber-mem-label tier-${m.tier}">${m.label}</text>
+    </g>`;
+  });
+  return { conn, mem };
+}
+
+function rebuildChamber(anchorId) {
+  const cm = genChamberMemories(anchorId);
+  document.getElementById('chamber-connectors').innerHTML = cm.conn;
+  document.getElementById('chamber-memories').innerHTML = cm.mem;
+  const anchor = NODES.find(n => n.id === anchorId);
+  if (anchor) {
+    const nameEl = document.getElementById('chamber-anchor-name');
+    const metaEl = document.getElementById('chamber-anchor-meta');
+    if (nameEl) nameEl.textContent = anchor.label;
+    const memCount = (MEMORY_GROUPS[anchorId] || []).length;
+    if (metaEl) metaEl.textContent = `${memCount} memor${memCount === 1 ? 'y' : 'ies'} · ${ORBITS[anchor.orbit]?.label || anchor.orbit}`;
+  }
+}
+
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+const state = {
+  screen: 'l1',
+  panelOpen: false,
+  panelType: null,
+  panelId: null,
+  search: '',
+  wowTriggered: false,
+  wowComplete: false,
+  previousScreen: 'l1',
+  chamberAnchor: 'precision-early-home',
+};
+
+// ════════════════════════════════════════════════════
+//  PANEL CONTENT
+// ════════════════════════════════════════════════════
+function getPanelContent(type, id) {
+  const rooted = RIM.filter(v => v.kind === 'bright').map(v => v.name);
+  const forming = RIM.filter(v => v.kind === 'dim').map(v => v.name);
+  const gaps = RIM.filter(v => v.kind === 'gap').map(v => v.name);
+
+  if (type === 'core') {
+    const rootedStr = rooted.length ? rooted.join(' and ') + (rooted.length === 1 ? ' is' : ' are') + ' rooted' : '';
+    const formingStr = forming.length ? forming.join(', ') + (forming.length === 1 ? ' is' : ' are') + ' forming' : '';
+    const gapStr = gaps.length ? gaps.join(' and ') + (gaps.length === 1 ? ' is' : ' are') + ' still waiting for a story' : '';
+    const parts = [rootedStr, formingStr, gapStr].filter(Boolean).join('. ') + '.';
+    return `<div class="panel-eyebrow">THE SYNTHESIZED YOU</div>
+<div class="panel-subject">Eva</div>
+<div class="conv" id="panel-conv" data-surface="core">
+  <div class="msg-ai">what follows isn't fixed. it's what your pieces say about you — today.</div>
+  <div class="msg-ai">${parts}</div>
+  <div class="msg-ai">want to add the next piece?</div>
+</div>
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="tell me what's true today…"><span class="panel-composer-hint">↵ send</span></div>`;
+  }
+
+  if (type === 'gap') {
+    const v = CONSTELLATION_RAW?.values?.find(val => val.name === id);
+    const prompt = v?.quietNoticing || `${id} has no formative root yet.`;
+    return `<div class="panel-eyebrow">AN OPEN VALUE</div>
+<div class="panel-subject">${id}<span class="pill rim-pill">Rim value</span></div>
+<div class="conv" id="panel-conv" data-surface="gap" data-gap="${id}">
+  <div class="msg-ai">${prompt} tell me about an early moment that shaped your sense of ${id}.</div>
+</div>
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="a name, a memory, a sentence…"><span class="panel-composer-hint">↵ send</span></div>`;
+  }
+
+  if (type === 'anchor') {
+    const n = NODES.find(nd => nd.id === id);
+    const memCount = (MEMORY_GROUPS[id] || []).length;
+    return `<div class="panel-eyebrow">A FORMATIVE ANCHOR</div>
+<div class="panel-subject">${n.label}<span class="pill">Formative · ${memCount} memories</span></div>
+<div class="conv" id="panel-conv" data-surface="anchor" data-anchor="${id}">
+  <div class="msg-ai">this anchor holds ${memCount} memories. what does ${n.label.split('(')[0].trim()} mean to who you are today?</div>
+</div>
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="tell me more about ${n.label.split('(')[0].trim()}…"><span class="panel-composer-hint">↵ send</span></div>`;
+  }
+
+  if (type === 'open') {
+    const seat = CONSTELLATION_RAW?.openSeats?.find(s => s.id === id);
+    const prompt = seat?.contextPrompt || 'what belongs in this empty space?';
+    return `<div class="panel-eyebrow">AN OPEN SEAT</div>
+<div class="panel-subject">an open seat</div>
+<div class="conv" id="panel-conv" data-surface="open" data-seat="${id}">
+  <div class="msg-ai">${prompt}</div>
+</div>
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="a name, a memory, a sentence…"><span class="panel-composer-hint">↵ send</span></div>`;
+  }
+
+  if (type === 'memory') {
+    const anchorId = state.chamberAnchor;
+    const mems = MEMORY_GROUPS[anchorId] || [];
+    const m = mems.find(mm => mm.id === id);
+    const anchor = NODES.find(n => n.id === anchorId);
+    const anchorLabel = anchor ? anchor.label : anchorId;
+    return `<div class="panel-eyebrow">A MEMORY UNDER ${anchorLabel.toUpperCase()}</div>
+<div class="panel-subject">${m ? m.label : id}<span class="pill">Formative</span></div>
+<div class="conv" id="panel-conv" data-surface="memory" data-memory="${id}" data-anchor="${anchorId}">
+  <div class="msg-ai">${m?.content && !m.content.startsWith('[') ? m.content.slice(0, 200) : 'this memory is part of your ' + anchorLabel + ' pattern. what does it still hold for you?'}</div>
+</div>
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="add a related moment…"><span class="panel-composer-hint">↵ send</span></div>`;
+  }
+
+  if (type === 'known') {
+    const n = NODES.find(nd => nd.id === id);
+    const orbitLabel = n ? ORBITS[n.orbit].label : 'Intentional';
+    const kp = CONSTELLATION_RAW?.knownPieces?.find(k => k.id === id);
+    const summary = kp?.content ? kp.content.split('\n')[0].replace(/^#+\s*/, '').slice(0, 120) : '';
+    return `<div class="panel-eyebrow">A ${orbitLabel.toUpperCase()} PIECE</div>
+<div class="panel-subject">${n ? n.label : id}<span class="pill">${orbitLabel}</span></div>
+<div class="conv" id="panel-conv" data-surface="known" data-node="${id}">
+  <div class="msg-ai">${summary || 'you placed this on your ' + orbitLabel.toLowerCase() + ' orbit. what makes it part of who you are?'}</div>
+</div>
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="tell me more…"><span class="panel-composer-hint">↵ send</span></div>`;
+  }
+
+  return '';
+}
+
+// ════════════════════════════════════════════════════
+//  CHAT — streaming connection to Claude
+// ════════════════════════════════════════════════════
+const chatHistories = {};
+
+function getChatKey() {
+  const conv = document.getElementById('panel-conv');
+  if (conv) {
+    const surface = conv.dataset.surface;
+    const id = conv.dataset.gap || conv.dataset.anchor || conv.dataset.seat || conv.dataset.memory || conv.dataset.node || 'core';
+    return `${surface}:${id}`;
+  }
+  if (state.screen === 'chamber') return `chamber:${state.chamberAnchor}`;
+  return 'l1';
+}
+
+function getContext() {
+  const conv = document.getElementById('panel-conv');
+  const ctx = { surface: state.screen };
+  if (conv) {
+    ctx.surface = conv.dataset.surface || state.screen;
+    if (conv.dataset.gap) ctx.gapValue = conv.dataset.gap;
+    if (conv.dataset.anchor) ctx.anchorId = conv.dataset.anchor;
+    if (conv.dataset.memory) ctx.memoryId = conv.dataset.memory;
+    if (conv.dataset.node) ctx.nodeId = conv.dataset.node;
+    if (conv.dataset.seat) ctx.seatId = conv.dataset.seat;
+  }
+  if (state.screen === 'chamber') ctx.anchorId = state.chamberAnchor;
+  return ctx;
+}
+
+async function sendMessage(text, convEl, inputEl) {
+  if (!text.trim()) return;
+  const key = getChatKey();
+  if (!chatHistories[key]) chatHistories[key] = [];
+
+  convEl.innerHTML += `<div class="msg-user">${text}</div>`;
+  if (inputEl) inputEl.value = '';
+
+  chatHistories[key].push({ role: 'user', content: text });
+
+  const aiMsg = document.createElement('div');
+  aiMsg.className = 'msg-ai streaming';
+  aiMsg.textContent = '';
+  convEl.appendChild(aiMsg);
+  convEl.scrollTop = convEl.scrollHeight;
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: chatHistories[key],
+        constellation: CONSTELLATION_RAW,
+        context: getContext(),
+      }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: 'connection failed' }));
+      aiMsg.textContent = `[error: ${err.error || 'unknown'}]`;
+      aiMsg.classList.remove('streaming');
+      return;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        try {
+          const event = JSON.parse(data);
+          if (event.type === 'text') {
+            fullText += event.text;
+            aiMsg.textContent = fullText;
+            convEl.scrollTop = convEl.scrollHeight;
+          } else if (event.type === 'error') {
+            aiMsg.textContent = `[error: ${event.error}]`;
+          }
+        } catch {}
+      }
+    }
+
+    aiMsg.classList.remove('streaming');
+    if (fullText) chatHistories[key].push({ role: 'assistant', content: fullText });
+  } catch (err) {
+    aiMsg.textContent = `[connection error: ${err.message}]`;
+    aiMsg.classList.remove('streaming');
+  }
+}
+
+function wireComposer(inputEl, convEl) {
+  if (!inputEl || !convEl) return;
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && inputEl.value.trim()) {
+      e.preventDefault();
+      sendMessage(inputEl.value.trim(), convEl, inputEl);
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ════════════════════════════════════════════════════
+function showScreen(name) {
+  const from = state.screen;
+  state.previousScreen = from;
+  state.screen = name;
+
+  if (from === 'l1' && name === 'chamber') {
+    zoomToChamber();
+  } else if (from === 'chamber' && name === 'l1') {
+    zoomFromChamber();
+  } else {
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active', 'zoom-to-chamber', 'zoom-from-chamber', 'unzoom', 'zoom-enter', 'zoom-exit'));
+    document.getElementById('screen-' + name).classList.add('active');
+  }
+}
+
+function zoomToChamber() {
+  const l1 = document.getElementById('screen-l1');
+  const ch = document.getElementById('screen-chamber');
+  const l1Stage = l1.querySelector('.stage');
+  const chStage = ch.querySelector('.stage');
+
+  l1Stage.style.transition = 'transform 700ms cubic-bezier(.2,.7,.2,1), opacity 500ms ease';
+  l1Stage.style.transform = 'scale(2.4)';
+  l1Stage.style.opacity = '0';
+
+  setTimeout(() => {
+    ch.classList.add('active');
+  }, 300);
+
+  setTimeout(() => {
+    l1.classList.remove('active');
+    l1Stage.style.transition = 'none';
+    l1Stage.style.transform = '';
+    l1Stage.style.opacity = '';
+  }, 750);
+}
+
+function zoomFromChamber() {
+  const l1 = document.getElementById('screen-l1');
+  const ch = document.getElementById('screen-chamber');
+  const chStage = ch.querySelector('.stage');
+  const chBar = ch.querySelector('.chamber-bar');
+  const chZone = ch.querySelector('.chat-zone');
+  const chFooter = ch.querySelector('.footer');
+  const chCaption = ch.querySelector('.chamber-anchor-caption');
+
+  l1.classList.add('active');
+  ch.style.transition = 'opacity 400ms ease';
+
+  setTimeout(() => {
+    ch.style.opacity = '0';
+  }, 30);
+
+  setTimeout(() => {
+    ch.classList.remove('active');
+    ch.style.transition = '';
+    ch.style.opacity = '';
+  }, 500);
+}
+
+function openPanel(type, id) {
+  state.panelOpen = true;
+  state.panelType = type;
+  state.panelId = id;
+  const panel = document.getElementById('panel');
+  document.getElementById('panel-content').innerHTML = getPanelContent(type, id);
+  panel.classList.add('open');
+  const screen = document.getElementById('screen-' + state.screen);
+  screen.classList.add('dimmed');
+
+  setTimeout(() => {
+    const conv = document.getElementById('panel-conv');
+    const input = panel.querySelector('.panel-composer-input');
+    if (conv && input) wireComposer(input, conv);
+    if (input) input.focus();
+  }, 100);
+}
+
+function closePanel() {
+  state.panelOpen = false;
+  state.panelType = null;
+  state.panelId = null;
+  document.getElementById('panel').classList.remove('open');
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('dimmed'));
+}
+
+// ════════════════════════════════════════════════════
+//  WOW MOMENT
+// ════════════════════════════════════════════════════
+function triggerWow(userText) {
+  if (state.wowTriggered) return;
+  state.wowTriggered = true;
+
+  const conv = document.getElementById('care-conv');
+  const label = userText.length <= 24 ? userText : 'a moment of care';
+
+  conv.innerHTML += `<div class="msg-user">${userText}</div>`;
+
+  setTimeout(() => {
+    conv.innerHTML += `<div class="msg-ai">that's a beginning. i've placed it where it belongs.</div>`;
+
+    const fseat1 = NODES.find(n => n.id === 'fseat1');
+    const pos = nodePos(fseat1);
+    const lbl = labelAnchor(pos.angle);
+    const lp = polar(pos.angle, pos.r + 22);
+
+    const seatEl = document.querySelector('[data-id="fseat1"]');
+    if (seatEl) seatEl.style.display = 'none';
+
+    const spin = document.getElementById('l1-spin');
+    const ns = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    ns.classList.add('new-anchor-group');
+    ns.innerHTML = `<circle cx="${pos.x.toFixed(1)}" cy="${pos.y.toFixed(1)}" r="18" class="new-anchor-pulse"/>
+      <circle cx="${pos.x.toFixed(1)}" cy="${pos.y.toFixed(1)}" r="18" fill="url(#gAnchorRose)" class="new-anchor-body"/>
+      <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="node-label-anchor counter-rot new-anchor-label" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">${label}</text>`;
+    spin.appendChild(ns);
+
+    const careArc = document.querySelector('[data-rim="care"]');
+    if (!careArc) {
+      const rimG = document.getElementById('rim-arcs');
+      const cv = RIM.find(v => v.name === 'care');
+      const start = cv.center - 30, end = cv.center + 30;
+      const newArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      newArc.setAttribute('d', arcPath(64, start, end));
+      newArc.setAttribute('class', 'rim-arc dim');
+      newArc.setAttribute('data-rim', 'care');
+      newArc.style.opacity = '0';
+      rimG.appendChild(newArc);
+      requestAnimationFrame(() => { newArc.style.opacity = '1'; });
+    }
+
+    const careGap = document.querySelector('[data-gap="care"]');
+    if (careGap) {
+      careGap.style.transition = 'opacity 1s ease';
+      careGap.style.opacity = '0.3';
+    }
+
+    const pill = document.getElementById('care-pill');
+    if (pill) { pill.textContent = 'Rim value · just rooted'; pill.classList.add('rim-pill'); }
+
+    setTimeout(() => {
+      conv.innerHTML += `<div class="action-row"><button class="action-pill" id="wow-close">see it in your constellation →</button></div>`;
+      document.getElementById('wow-close').addEventListener('click', () => {
+        closePanel();
+        state.wowComplete = true;
+      });
+    }, 400);
+  }, 600);
+}
+
+// ════════════════════════════════════════════════════
+//  SEARCH
+// ════════════════════════════════════════════════════
+function handleSearch(query) {
+  state.search = query;
+  const q = query.toLowerCase().trim();
+  const pin = document.getElementById('search-pin');
+  const hint = document.getElementById('l1-zoom-hint');
+
+  if (!q) {
+    document.querySelectorAll('.node').forEach(el => el.style.opacity = '');
+    document.querySelectorAll('.signal').forEach(el => el.style.opacity = '');
+    document.querySelectorAll('.gap-group').forEach(el => el.style.opacity = '');
+    pin.classList.remove('visible');
+    hint.textContent = 'scroll to zoom · see grouped memories';
+    return;
+  }
+
+  let matchCount = 0;
+  document.querySelectorAll('.node').forEach(el => {
+    const id = el.dataset.id;
+    const n = NODES.find(nd => nd.id === id);
+    const text = (n && n.label || '').toLowerCase();
+    if (text.includes(q)) { el.style.opacity = '1'; matchCount++; }
+    else el.style.opacity = '0.15';
+  });
+
+  document.querySelectorAll('.signal').forEach(el => el.style.opacity = '0.15');
+
+  RIM.forEach(v => {
+    const gapEl = document.querySelector(`[data-gap="${v.name}"]`);
+    if (gapEl) {
+      if (v.name.toLowerCase().includes(q)) { gapEl.style.opacity = '1'; matchCount++; }
+      else gapEl.style.opacity = '0.15';
+    }
+  });
+
+  if (q === 'care') {
+    pin.classList.add('visible');
+  } else {
+    pin.classList.remove('visible');
+  }
+  hint.textContent = matchCount > 0 ? `searching · ${matchCount} match${matchCount > 1 ? 'es' : ''} across your sky` : 'searching · no matches';
+}
+
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+async function init() {
+  await loadData();
+
+  document.getElementById('l1-spin').innerHTML =
+    genStars(1, 460) + genWisps() + genVoidCore() + genSignals() + genNodes();
+
+  document.getElementById('chamber-halo').innerHTML = genChamberHalo();
+  document.getElementById('chamber-spin').innerHTML = genStars(2, 345) + genWisps();
+  const cm = genChamberMemories();
+  document.getElementById('chamber-connectors').innerHTML = cm.conn;
+  document.getElementById('chamber-memories').innerHTML = cm.mem;
+
+  document.getElementById('draft-spin').innerHTML = genStars(3, 160);
+
+  // L1 node clicks
+  document.getElementById('l1-spin').addEventListener('click', (e) => {
+    if (state.panelOpen) return;
+    const nodeG = e.target.closest('.node');
+    const gapG = e.target.closest('[data-gap]');
+    const coreG = e.target.closest('.core-group');
+
+    if (nodeG) {
+      const id = nodeG.dataset.id;
+      const type = nodeG.dataset.type;
+      if (type === 'anchor') {
+        state.chamberAnchor = id;
+        rebuildChamber(id);
+        showScreen('chamber');
+      } else if (type === 'open') {
+        showScreen('draft');
+      } else {
+        openPanel('known', id);
+      }
+    } else if (gapG) {
+      const gapName = gapG.dataset.gap;
+      openPanel('gap', gapName);
+    } else if (coreG) {
+      openPanel('core', 'eva');
+    }
+  });
+
+  // Chamber memory clicks
+  document.getElementById('chamber-memories').addEventListener('click', (e) => {
+    if (state.panelOpen) return;
+    const memG = e.target.closest('.chamber-mem');
+    if (memG) openPanel('memory', memG.dataset.mem);
+  });
+
+  // Chamber back
+  document.getElementById('chamber-back').addEventListener('click', () => {
+    if (state.panelOpen) closePanel();
+    showScreen('l1');
+  });
+
+  // Draft back
+  document.getElementById('draft-back').addEventListener('click', () => {
+    showScreen('l1');
+  });
+
+  // Panel close
+  document.getElementById('panel-close').addEventListener('click', closePanel);
+
+  // Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (state.panelOpen) closePanel();
+      else if (state.screen === 'chamber') showScreen('l1');
+      else if (state.screen === 'draft') showScreen('l1');
+    }
+  });
+
+  // Search
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    handleSearch(e.target.value);
+  });
+
+  // L1 composer enter — open core panel and send the message
+  document.getElementById('l1-composer').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.value.trim()) {
+      const text = e.target.value.trim();
+      e.target.value = '';
+      openPanel('core', 'eva');
+      setTimeout(() => {
+        const conv = document.getElementById('panel-conv');
+        const input = document.querySelector('#panel .panel-composer-input');
+        if (conv) sendMessage(text, conv, input);
+      }, 150);
+    }
+  });
+
+  // Chamber chat input
+  const chamberInput = document.querySelector('#screen-chamber .chat-input');
+  if (chamberInput) {
+    chamberInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && chamberInput.value.trim()) {
+        e.preventDefault();
+        openPanel('anchor', state.chamberAnchor);
+        const text = chamberInput.value.trim();
+        chamberInput.value = '';
+        setTimeout(() => {
+          const conv = document.getElementById('panel-conv');
+          const input = document.querySelector('#panel .panel-composer-input');
+          if (conv) sendMessage(text, conv, input);
+        }, 150);
+      }
+    });
+  }
+
+  // Draft composer
+  const draftInput = document.querySelector('#screen-draft .composer-input-wide');
+  if (draftInput) {
+    draftInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && draftInput.value.trim()) {
+        e.preventDefault();
+        const text = draftInput.value.trim();
+        draftInput.value = '';
+        const conv = document.querySelector('#screen-draft .draft-thread');
+        if (conv) sendMessage(text, conv, draftInput);
+      }
+    });
+  }
+
+  // Draft send button
+  const draftSend = document.querySelector('#screen-draft .composer-send');
+  if (draftSend && draftInput) {
+    draftSend.addEventListener('click', () => {
+      if (draftInput.value.trim()) {
+        const text = draftInput.value.trim();
+        draftInput.value = '';
+        const conv = document.querySelector('#screen-draft .draft-thread');
+        if (conv) sendMessage(text, conv, draftInput);
+      }
+    });
+  }
+
+  // Scroll zoom
+  let scrollCooldown = false;
+  document.getElementById('screen-l1').addEventListener('wheel', (e) => {
+    if (state.panelOpen || scrollCooldown) return;
+    if (e.deltaY < -15) {
+      scrollCooldown = true;
+      showScreen('chamber');
+      setTimeout(() => { scrollCooldown = false; }, 800);
+    }
+  }, { passive: true });
+
+  document.getElementById('screen-chamber').addEventListener('wheel', (e) => {
+    if (state.panelOpen || scrollCooldown) return;
+    if (e.deltaY > 15) {
+      scrollCooldown = true;
+      showScreen('l1');
+      setTimeout(() => { scrollCooldown = false; }, 800);
+    }
+  }, { passive: true });
+}
+
+init();
+</script>
+</body>
+</html>
