@@ -54,6 +54,16 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 .twinkle-d{animation:twinkle 3.8s ease-in-out infinite 2.4s}
 @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
 
+/* ── ANCHOR BLOOM ── */
+.anchor-bloom{opacity:.85;animation:bloomPulse 6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes bloomPulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+
+/* ── GALAXY BACKGROUND (WebGL) ── */
+.galaxy-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;z-index:0}
+
+/* ── NEBULA STAR (WebGL) ── */
+.nebula-canvas{position:absolute;pointer-events:none;mix-blend-mode:screen;z-index:1;opacity:.35}
+
 /* ── WISPS ── */
 .wisp{transform-box:fill-box;transform-origin:center}
 .wisp-a{animation:wispA 90s ease-in-out infinite alternate}
@@ -73,19 +83,28 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 
 /* ── NODES & LABELS ── */
 .node-label-anchor{font-family:var(--serif);font-weight:400;font-size:14px;fill:var(--amber);letter-spacing:.005em}
-.node-label-known{font-family:var(--serif);font-weight:400;font-size:11px;fill:var(--text-secondary);letter-spacing:.005em;opacity:.82}
+.node-label-known{font-family:var(--serif);font-weight:400;font-size:11px;fill:var(--text-secondary);letter-spacing:.005em;opacity:0;transition:opacity 500ms ease}
+.node-label-known.orbit-behaviour{font-size:10px}
+.node:hover .node-label-known{opacity:.88}
 .node{transition:opacity 300ms ease;cursor:pointer}
 .node:hover{filter:brightness(1.15)}
 
+/* ── QUIET NOTICING ── */
+
 /* ── OPEN SEATS ── */
-.empty-seat-halo{fill:rgba(244,178,102,0.12);animation:emptyBreathe 3.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-.empty-seat-ring{fill:rgba(244,178,102,0.06);stroke:rgba(244,178,102,0.85);stroke-width:1.4;stroke-dasharray:3 2.5;animation:emptyRing 3.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-.empty-seat-dot{fill:rgba(255,230,178,0.95);filter:drop-shadow(0 0 3px rgba(244,178,102,0.85));animation:emptyDot 3.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-.empty-seat-ripple{fill:none;stroke:rgba(244,178,102,0.75);stroke-width:1;transform-origin:center;transform-box:fill-box;animation:emptyPing 3.6s ease-out infinite}
-@keyframes emptyBreathe{0%,100%{opacity:.55;transform:scale(.88)}50%{opacity:1;transform:scale(1.10)}}
-@keyframes emptyRing{0%,100%{opacity:.80;transform:scale(.96)}50%{opacity:1;transform:scale(1.06)}}
-@keyframes emptyDot{0%,100%{opacity:.80;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
-@keyframes emptyPing{0%{opacity:.85;transform:scale(.55);stroke-width:1.3}70%{opacity:.10;stroke-width:.6}100%{opacity:0;transform:scale(2.6);stroke-width:.4}}
+.empty-seat-haze{fill:url(#gOpenSeatHaze);opacity:.45;animation:seatDrift 11s ease-in-out infinite alternate;transform-origin:center;transform-box:fill-box}
+.empty-seat-glow{fill:url(#gOpenSeatGlow);opacity:.85;animation:seatBreathe 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.empty-seat-inner{fill:url(#gOpenSeatInner);opacity:.9;animation:seatBreathe 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.empty-seat-core{fill:rgba(255,235,190,0.95);filter:drop-shadow(0 0 4px rgba(244,178,102,0.85));animation:seatPulse 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+.empty-seat-ripple{fill:none;stroke:rgba(244,178,102,0.6);stroke-width:.8;transform-origin:center;transform-box:fill-box;animation:seatPing 4s ease-out infinite}
+@keyframes seatBreathe{0%,100%{opacity:.55;transform:scale(.90)}50%{opacity:1;transform:scale(1.10)}}
+@keyframes seatPulse{0%,100%{opacity:.65;transform:scale(.85)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes seatDrift{0%{opacity:.30;transform:scale(.94) rotate(-3deg)}100%{opacity:.50;transform:scale(1.06) rotate(3deg)}}
+@keyframes seatPing{0%{opacity:.55;transform:scale(.6)}60%{opacity:.08}100%{opacity:0;transform:scale(2.4)}}
+.node-open{cursor:pointer}
+.node-open:hover .empty-seat-glow{opacity:1;transform:scale(1.2)}
+.node-open:hover .empty-seat-inner{opacity:1}
+.node-open:hover .empty-seat-core{opacity:1;filter:drop-shadow(0 0 6px rgba(244,178,102,0.95))}
 .seat-prompt{font-family:var(--serif);font-style:italic;font-weight:400;font-size:11px;fill:var(--text-secondary);opacity:0;transition:opacity 200ms ease;letter-spacing:.005em;pointer-events:none}
 .node-open:hover .seat-prompt{opacity:.78}
 
@@ -133,14 +152,36 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 .chat-hint .sep{width:1px;height:10px;background:var(--rule-strong);display:inline-block}
 
 /* ── SIDE PANEL ── */
-.panel-side{position:absolute;top:0;right:0;width:480px;height:100%;background:var(--panel);border-left:1px solid var(--rule-strong);z-index:20;display:flex;flex-direction:column;padding:56px 44px 32px;transform:translateX(100%);transition:transform 400ms cubic-bezier(.2,.7,.2,1)}
+.panel-side{position:absolute;top:0;right:0;width:480px;height:100%;background:var(--panel);border-left:1px solid var(--rule-strong);z-index:20;display:flex;flex-direction:column;transform:translateX(100%);transition:transform 400ms cubic-bezier(.2,.7,.2,1)}
 .panel-side.open{transform:translateX(0)}
 .panel-side .close-btn{position:absolute;top:22px;right:24px;background:transparent;border:none;color:var(--text-muted);font-family:var(--sans);font-size:18px;line-height:1;cursor:pointer;transition:color .2s}
 .panel-side .close-btn:hover{color:var(--text-primary)}
+
+/* ── Panel depth: deep (anchor, memory, core, gap) ── */
+.panel-side[data-depth="deep"]{padding:64px 48px 32px;transition:transform 550ms cubic-bezier(.16,.73,.2,1)}
+.panel-side[data-depth="deep"] .panel-eyebrow{font-family:var(--sans);font-weight:400;font-size:9.5px;color:var(--text-muted);letter-spacing:.32em;text-transform:uppercase;margin-bottom:18px}
+.panel-side[data-depth="deep"] .panel-subject{font-family:var(--serif);font-weight:400;font-size:30px;color:var(--text-primary);line-height:1.15;padding-bottom:26px;margin-bottom:28px;border-bottom:1px solid var(--rule);letter-spacing:.005em}
+.panel-side[data-depth="deep"] .conv{gap:26px}
+.panel-side[data-depth="deep"] .msg-ai{font-family:var(--serif);font-style:italic;font-weight:400;font-size:17px;line-height:1.65;color:var(--text-secondary);text-wrap:pretty}
+.panel-side[data-depth="deep"] .msg-user{font-family:var(--serif);font-weight:400;font-size:16px;line-height:1.6;color:var(--text-primary);text-align:right;padding-left:48px;text-wrap:pretty}
+.panel-side[data-depth="deep"] .panel-composer-input{font-family:var(--serif);font-style:italic;font-size:15px}
+
+/* ── Panel depth: light (known pieces, sessions, documents) ── */
+.panel-side[data-depth="light"]{padding:48px 40px 28px;transition:transform 320ms cubic-bezier(.2,.7,.2,1)}
+.panel-side[data-depth="light"] .panel-eyebrow{font-family:var(--sans);font-weight:400;font-size:10px;color:var(--text-muted);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+.panel-side[data-depth="light"] .panel-subject{font-family:var(--serif);font-weight:400;font-size:22px;color:var(--text-primary);line-height:1.25;padding-bottom:16px;margin-bottom:18px;border-bottom:1px solid var(--rule);letter-spacing:.005em}
+.panel-side[data-depth="light"] .conv{gap:16px}
+.panel-side[data-depth="light"] .msg-ai{font-family:var(--serif);font-style:italic;font-weight:400;font-size:14.5px;line-height:1.5;color:var(--text-secondary);text-wrap:pretty}
+.panel-side[data-depth="light"] .msg-user{font-family:var(--serif);font-weight:400;font-size:13.5px;line-height:1.5;color:var(--text-primary);text-align:right;padding-left:48px;text-wrap:pretty}
+.panel-side[data-depth="light"] .panel-composer-input{font-family:var(--serif);font-style:italic;font-size:13px}
+.panel-side[data-depth="light"] .panel-content-summary{font-family:var(--serif);font-weight:400;font-size:13px;line-height:1.6;color:var(--text-muted);padding:12px 16px;background:rgba(255,235,200,0.025);border-left:2px solid rgba(244,178,102,0.15);border-radius:0 4px 4px 0;margin-bottom:8px;white-space:pre-line}
+
+/* ── Panel shared defaults (fallback) ── */
 .panel-eyebrow{font-family:var(--sans);font-weight:400;font-size:10px;color:var(--text-muted);letter-spacing:.26em;text-transform:uppercase;margin-bottom:14px}
 .panel-subject{font-family:var(--serif);font-weight:400;font-size:26px;color:var(--text-primary);line-height:1.2;padding-bottom:22px;margin-bottom:24px;border-bottom:1px solid var(--rule);letter-spacing:.005em}
 .panel-subject .pill{display:inline-block;margin-left:10px;padding:3px 10px 4px;border:1px solid rgba(244,178,102,0.32);border-radius:999px;color:var(--amber);font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.20em;text-transform:uppercase;vertical-align:middle}
 .panel-subject .pill.rim-pill{border-color:rgba(244,178,102,0.55);background:rgba(244,178,102,0.08)}
+.panel-side[data-depth="light"] .pill{font-size:9px;letter-spacing:.18em;padding:2px 8px 3px}
 .conv{flex:1;display:flex;flex-direction:column;gap:22px;overflow-y:auto;padding-right:4px}
 .msg-ai{font-family:var(--serif);font-style:italic;font-weight:400;font-size:16px;line-height:1.55;color:var(--text-secondary);text-wrap:pretty}
 .msg-ai em{color:var(--amber);font-style:italic}
@@ -281,9 +322,38 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
   #app{display:none}
 }
 
+/* ── PROFILE SCREEN ── */
+#screen-profile{background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+#screen-profile .constellation{opacity:.35}
+.profile-bar{position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;z-index:7;font-family:var(--sans);padding:28px 40px}
+.profile-scroll{position:relative;z-index:5;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.profile-inner{max-width:680px;margin:0 auto;padding:40px 40px 100px}
+.profile-header{margin-bottom:64px}
+.profile-eyebrow{font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--text-muted);margin-bottom:18px}
+.profile-name{font-family:var(--serif);font-weight:400;font-size:42px;color:var(--text-primary);line-height:1.1;letter-spacing:.005em;margin-bottom:12px}
+.profile-sub{font-family:var(--serif);font-style:italic;font-weight:400;font-size:17px;line-height:1.55;color:var(--text-secondary);max-width:520px;text-wrap:pretty}
+.profile-section{margin-bottom:56px}
+.profile-section-title{font-family:var(--serif);font-weight:400;font-size:22px;color:var(--text-primary);letter-spacing:.005em;margin-bottom:28px;padding-bottom:14px;border-bottom:1px solid var(--rule)}
+.profile-radar{display:flex;justify-content:center;margin-bottom:8px}
+.profile-radar svg{max-width:420px;width:100%}
+.profile-radar-label{font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;fill:var(--text-muted)}
+.profile-radar-axis{stroke:var(--rule-strong);stroke-width:.5}
+.profile-radar-ring{fill:none;stroke:var(--rule);stroke-width:.5}
+.profile-radar-area{fill:rgba(244,178,102,0.08);stroke:rgba(244,178,102,0.55);stroke-width:1.5}
+.profile-radar-dot{fill:var(--amber);r:3}
+.profile-list{list-style:none;padding:0}
+.profile-list li{display:flex;align-items:baseline;gap:16px;padding:16px 0;border-bottom:1px solid var(--rule)}
+.profile-list li:last-child{border-bottom:none}
+.profile-list-num{font-family:var(--sans);font-weight:400;font-size:10px;color:var(--text-muted);letter-spacing:.08em;min-width:20px;flex-shrink:0}
+.profile-list-text{font-family:var(--serif);font-weight:400;font-size:15.5px;line-height:1.5;color:var(--text-primary);letter-spacing:.005em}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);margin-bottom:56px}
+.profile-stat{background:var(--bg);padding:24px 20px;text-align:center}
+.profile-stat-value{font-family:var(--serif);font-weight:400;font-size:28px;color:var(--amber);letter-spacing:.005em;margin-bottom:6px}
+.profile-stat-label{font-family:var(--sans);font-weight:400;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-muted)}
+
 /* ── REDUCED MOTION ── */
 @media(prefers-reduced-motion:reduce){
-  .spin,.counter-rot,.star,.wisp,.signal,.core-spark,.gap-group,.empty-seat-halo,.empty-seat-ring,.empty-seat-dot,.empty-seat-ripple,.new-anchor-body,.new-anchor-pulse,.new-anchor-label,.chamber-anchor-spark,.chamber-mem-body,.mic-pulse,.ai-marker-spark,.thinking-dot,.halo-cloud{animation:none !important}
+  .spin,.counter-rot,.star,.wisp,.signal,.core-spark,.gap-group,.empty-seat-glow,.empty-seat-inner,.empty-seat-core,.empty-seat-haze,.empty-seat-ripple,.new-anchor-body,.new-anchor-pulse,.new-anchor-label,.chamber-anchor-spark,.chamber-mem-body,.mic-pulse,.ai-marker-spark,.thinking-dot,.halo-cloud{animation:none !important}
   .zooming{transition:none !important}
   .screen{transition:none !important}
   .panel-side{transition:none !important}
@@ -453,6 +523,66 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
     <stop offset="60%" stop-color="#b8923c" stop-opacity="0.32"/>
     <stop offset="100%" stop-color="#806620" stop-opacity="0"/>
   </radialGradient>
+  <radialGradient id="gBloomAmber" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#f4b266" stop-opacity="0.28"/>
+    <stop offset="25%" stop-color="#d68a48" stop-opacity="0.12"/>
+    <stop offset="55%" stop-color="#a8632c" stop-opacity="0.04"/>
+    <stop offset="100%" stop-color="#7a4a1c" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gBloomCopper" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#e08850" stop-opacity="0.26"/>
+    <stop offset="25%" stop-color="#b46038" stop-opacity="0.11"/>
+    <stop offset="55%" stop-color="#7a3a1c" stop-opacity="0.035"/>
+    <stop offset="100%" stop-color="#4a2010" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gBloomGold" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#e8c878" stop-opacity="0.25"/>
+    <stop offset="25%" stop-color="#c4a050" stop-opacity="0.10"/>
+    <stop offset="55%" stop-color="#806620" stop-opacity="0.03"/>
+    <stop offset="100%" stop-color="#504010" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gBloomRose" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#e8a890" stop-opacity="0.24"/>
+    <stop offset="25%" stop-color="#c07868" stop-opacity="0.10"/>
+    <stop offset="55%" stop-color="#7c4438" stop-opacity="0.03"/>
+    <stop offset="100%" stop-color="#4a2820" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gOpenSeatGlow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#f4b266" stop-opacity="0.32"/>
+    <stop offset="18%" stop-color="#e6a050" stop-opacity="0.18"/>
+    <stop offset="45%" stop-color="#c8884a" stop-opacity="0.06"/>
+    <stop offset="100%" stop-color="#c8884a" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gOpenSeatInner" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#ffe8c0" stop-opacity="0.50"/>
+    <stop offset="30%" stop-color="#f4c888" stop-opacity="0.22"/>
+    <stop offset="65%" stop-color="#d6a060" stop-opacity="0.05"/>
+    <stop offset="100%" stop-color="#d6a060" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gOpenSeatHaze" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#e8b870" stop-opacity="0.20"/>
+    <stop offset="30%" stop-color="#c89850" stop-opacity="0.10"/>
+    <stop offset="65%" stop-color="#8a7a48" stop-opacity="0.025"/>
+    <stop offset="100%" stop-color="#8a7a48" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gStarBloom" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#f5e9d4" stop-opacity="0.38"/>
+    <stop offset="15%" stop-color="#f5e9d4" stop-opacity="0.15"/>
+    <stop offset="40%" stop-color="#f5e9d4" stop-opacity="0.04"/>
+    <stop offset="100%" stop-color="#f5e9d4" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gStarBloomCool" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#c4d2e8" stop-opacity="0.32"/>
+    <stop offset="15%" stop-color="#c4d2e8" stop-opacity="0.12"/>
+    <stop offset="40%" stop-color="#c4d2e8" stop-opacity="0.035"/>
+    <stop offset="100%" stop-color="#c4d2e8" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="gStarBloomWarm" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#f0c898" stop-opacity="0.35"/>
+    <stop offset="15%" stop-color="#f0c898" stop-opacity="0.14"/>
+    <stop offset="40%" stop-color="#f0c898" stop-opacity="0.038"/>
+    <stop offset="100%" stop-color="#f0c898" stop-opacity="0"/>
+  </radialGradient>
 </defs>
 </svg>
 
@@ -470,6 +600,7 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 <div id="app">
   <!-- L1 HOME -->
   <div id="screen-l1" class="screen active">
+    <canvas id="galaxy-bg" class="galaxy-canvas"></canvas>
     <main class="stage">
       <svg class="constellation" viewBox="-720 -450 1440 900" preserveAspectRatio="xMidYMid slice" shape-rendering="geometricPrecision">
         <circle cx="0" cy="0" r="540" fill="url(#coreGlowLargeFixed)"/>
@@ -482,6 +613,7 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
         <div class="pin-prose">care lives only on your rim — no memory roots it yet.<br><span class="pin-cta">click the gap to begin →</span></div>
       </div>
     </main>
+    <canvas id="nebula-star" class="nebula-canvas" width="150" height="150" style="width:150px;height:150px"></canvas>
     <header class="toolbar">
       <div class="brand"><h1>Constellation</h1><div class="subtitle">an identity interface for personal AI</div></div>
       <div class="tools">
@@ -598,6 +730,25 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
       </button>
     </div>
     <div class="draft-composer-hint"><span><kbd>↵</kbd> send</span><span class="sep"></span><span>shift + ↵ for new line</span></div>
+  </div>
+
+  <!-- PROFILE SCREEN -->
+  <div id="screen-profile" class="screen">
+    <main class="stage">
+      <svg class="constellation" viewBox="-720 -450 1440 900" preserveAspectRatio="xMidYMid slice" shape-rendering="geometricPrecision">
+        <circle cx="0" cy="0" r="700" fill="url(#coreGlowLargeFixed)" opacity="0.35"/>
+        <g class="rotator"><g class="spin" id="profile-spin"></g></g>
+      </svg>
+    </main>
+    <header class="profile-bar">
+      <button class="chamber-back" id="profile-back">
+        <span class="chamber-back-arrow">←</span>
+        <span class="chamber-back-text">Constellation</span>
+      </button>
+      <div class="chamber-title"><span style="color:var(--amber);margin-right:8px;font-size:11px">✦</span> the synthesized you</div>
+      <div class="chamber-close"><kbd>esc</kbd> to close</div>
+    </header>
+    <div class="profile-scroll" id="profile-content"></div>
   </div>
 
   <!-- SIDE PANEL -->
@@ -737,6 +888,7 @@ function saveData() {
 
 const SIZES = { anchor:18, known:11, open:6 };
 const LABEL_OFFSET = { anchor:22, known:14 };
+const BLOOM_GRADS = { amber:'gBloomAmber', copper:'gBloomCopper', gold:'gBloomGold', rose:'gBloomRose' };
 
 // ════════════════════════════════════════════════════
 //  HELPERS
@@ -774,6 +926,8 @@ function makeRng(seed) {
 function genStars(seed, count, w, h) {
   seed = seed || 1; count = count || 460; w = w || 2400; h = h || 1400;
   const rand = makeRng(seed);
+  let blooms = '';
+  let spikes = '';
   let s = '';
   for (let i = 0; i < count; i++) {
     const x = (rand() - 0.5) * w;
@@ -793,8 +947,27 @@ function genStars(seed, count, w, h) {
     else if (tr < 0.075) cls += ' twinkle-c';
     else if (tr < 0.10) cls += ' twinkle-d';
     s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(2)}" opacity="${op.toFixed(2)}" class="${cls}"/>`;
+
+    // bloom halo + diffraction spikes for bright stars (all derived, no new rand calls)
+    if (bright) {
+      const grad = cr < 0.10 ? 'gStarBloomCool' : cr < 0.25 ? 'gStarBloomWarm' : 'gStarBloom';
+      const bloomR = r * 5;
+      blooms += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${bloomR.toFixed(1)}" fill="url(#${grad})" opacity="${(op * 0.5).toFixed(2)}"/>`;
+      // diffraction cross on the largest bright stars
+      if (r > 1.6) {
+        const color = cr < 0.10 ? '#c4d2e8' : cr < 0.25 ? '#f0c898' : '#f5e9d4';
+        const sLen = r * 4;
+        // outer spike — long, faint
+        spikes += `<line x1="${(x-sLen).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+sLen).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="0.3" opacity="${(op*0.12).toFixed(2)}" stroke-linecap="round"/>`;
+        spikes += `<line x1="${x.toFixed(1)}" y1="${(y-sLen).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(y+sLen).toFixed(1)}" stroke="${color}" stroke-width="0.3" opacity="${(op*0.12).toFixed(2)}" stroke-linecap="round"/>`;
+        // inner spike — shorter, brighter core
+        const iLen = sLen * 0.35;
+        spikes += `<line x1="${(x-iLen).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+iLen).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="0.5" opacity="${(op*0.28).toFixed(2)}" stroke-linecap="round"/>`;
+        spikes += `<line x1="${x.toFixed(1)}" y1="${(y-iLen).toFixed(1)}" x2="${x.toFixed(1)}" y2="${(y+iLen).toFixed(1)}" stroke="${color}" stroke-width="0.5" opacity="${(op*0.28).toFixed(2)}" stroke-linecap="round"/>`;
+      }
+    }
   }
-  return s;
+  return blooms + s + spikes;
 }
 
 function genWisps() {
@@ -836,8 +1009,6 @@ function genVoidCore(careOverride) {
     <circle cx="0" cy="0" r="260" fill="url(#gWellOuter)"/>
     <circle cx="0" cy="0" r="160" fill="url(#gWellInner)"/>
     <circle cx="0" cy="0" r="62" fill="url(#gWellInteriorHome)"/>
-    <circle cx="0" cy="0" r="36" class="well-contour"/>
-    <g class="rim" id="rim-arcs">${arcs}</g>
     <g id="gap-labels">${gaps}</g>
     <circle cx="0" cy="0" r="2" fill="#fff4d8" class="core-spark"/>
   </g>`;
@@ -848,16 +1019,18 @@ function genNodes() {
   NODES.forEach((n, idx) => {
     const p = nodePos(n);
     if (n.type === 'open') {
-      const phase = (idx % 4) * -1.1;
-      const rPhase = (idx % 3) * -1.3;
+      const phase = (idx % 4) * -1.0;
+      const driftPhase = (idx % 3) * -3.5;
+      const ripple2 = phase - 2.0;
       const lbl = labelAnchor(p.angle);
       const lp = polar(p.angle, p.r + 20);
       s += `<g class="node node-open" data-id="${n.id}" data-type="open">
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="10" class="empty-seat-ripple" style="animation-delay:${rPhase}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="10" class="empty-seat-ripple delayed" style="animation-delay:${(rPhase - 1.8)}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="20" class="empty-seat-halo" style="animation-delay:${phase}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="10" class="empty-seat-ring" style="animation-delay:${phase}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" class="empty-seat-dot"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="12" class="empty-seat-ripple" style="animation-delay:${phase}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="12" class="empty-seat-ripple" style="animation-delay:${ripple2}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="28" class="empty-seat-haze" style="animation-delay:${driftPhase}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" class="empty-seat-glow" style="animation-delay:${phase}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="8" class="empty-seat-inner" style="animation-delay:${phase}s"/>
+        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" class="empty-seat-core" style="animation-delay:${phase}s"/>
         <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="seat-prompt counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">${n.prompt || ''}</text>
       </g>`;
     } else {
@@ -865,8 +1038,10 @@ function genNodes() {
       const grad = COLOR_GRADS[n.color] || 'gAnchorAmber';
       const lbl = labelAnchor(p.angle);
       const lp = polar(p.angle, p.r + LABEL_OFFSET[n.type]);
-      const labelCls = n.type === 'anchor' ? 'node-label-anchor' : 'node-label-known';
+      const labelCls = n.type === 'anchor' ? 'node-label-anchor' : ('node-label-known' + (n.orbit === 'behaviour' ? ' orbit-behaviour' : ''));
+      const bloomGrad = n.type === 'anchor' ? (BLOOM_GRADS[n.color] || 'gBloomAmber') : '';
       s += `<g class="node node-${n.type}" data-id="${n.id}" data-type="${n.type}">
+        ${bloomGrad ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${size * 3.2}" fill="url(#${bloomGrad})" class="anchor-bloom"/>` : ''}
         <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${size}" fill="url(#${grad})"/>
         <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="${labelCls} counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">${n.label}</text>
       </g>`;
@@ -966,12 +1141,14 @@ function getPanelContent(type, id) {
   if (type === 'anchor') {
     const n = NODES.find(nd => nd.id === id);
     const memCount = (MEMORY_GROUPS[id] || []).length;
-    return `<div class="panel-eyebrow">A FORMATIVE ANCHOR</div>
-<div class="panel-subject">${n.label}<span class="pill">Formative · ${memCount} memories</span></div>
+    const shortName = n.label.split('(')[0].trim();
+    return `<div class="panel-eyebrow">FORMATIVE</div>
+<div class="panel-subject">${n.label}<span class="pill">${memCount} memories</span></div>
 <div class="conv" id="panel-conv" data-surface="anchor" data-anchor="${id}">
-  <div class="msg-ai">this anchor holds ${memCount} memories. what does ${n.label.split('(')[0].trim()} mean to who you are today?</div>
+  <div class="msg-ai">${memCount} memories orbit around <em>${shortName}</em>. this is one of the deep ones — something that shaped the way you move through the world.</div>
+  <div class="msg-ai">what does it still hold for you?</div>
 </div>
-<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="tell me more about ${n.label.split('(')[0].trim()}…"><span class="panel-composer-hint">↵ send</span></div>`;
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="what comes up when you sit with this…"><span class="panel-composer-hint">↵ send</span></div>`;
   }
 
   if (type === 'open') {
@@ -991,28 +1168,187 @@ function getPanelContent(type, id) {
     const m = mems.find(mm => mm.id === id);
     const anchor = NODES.find(n => n.id === anchorId);
     const anchorLabel = anchor ? anchor.label : anchorId;
-    return `<div class="panel-eyebrow">A MEMORY UNDER ${anchorLabel.toUpperCase()}</div>
-<div class="panel-subject">${m ? m.label : id}<span class="pill">Formative</span></div>
+    const shortAnchor = anchorLabel.split('(')[0].trim();
+    const hasContent = m?.content && !m.content.startsWith('[');
+    return `<div class="panel-eyebrow">A MEMORY</div>
+<div class="panel-subject">${m ? m.label : id}<span class="pill">under ${shortAnchor}</span></div>
 <div class="conv" id="panel-conv" data-surface="memory" data-memory="${id}" data-anchor="${anchorId}">
-  <div class="msg-ai">${m?.content && !m.content.startsWith('[') ? m.content.slice(0, 200) : 'this memory is part of your ' + anchorLabel + ' pattern. what does it still hold for you?'}</div>
+  ${hasContent ? `<div class="msg-ai">${m.content.slice(0, 240)}</div>` : ''}
+  <div class="msg-ai">${hasContent ? 'you carried this one from <em>' + shortAnchor + '</em>. is there more to it than what\'s written here?' : 'this memory lives under <em>' + shortAnchor + '</em>. it hasn\'t been filled yet — what does it hold?'}</div>
 </div>
-<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="add a related moment…"><span class="panel-composer-hint">↵ send</span></div>`;
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="what this memory still means…"><span class="panel-composer-hint">↵ send</span></div>`;
   }
 
   if (type === 'known') {
     const n = NODES.find(nd => nd.id === id);
     const orbitLabel = n ? ORBITS[n.orbit].label : 'Intentional';
     const kp = CONSTELLATION_RAW?.knownPieces?.find(k => k.id === id);
+    const kindLabel = kp?.kind === 'session' ? 'session note' : kp?.kind === 'reflection' ? 'reflection' : kp?.kind === 'document' ? 'document' : 'piece';
     const summary = kp?.content ? kp.content.split('\n')[0].replace(/^#+\s*/, '').slice(0, 120) : '';
-    return `<div class="panel-eyebrow">A ${orbitLabel.toUpperCase()} PIECE</div>
+    // Extract first few content lines as a structured preview
+    const contentLines = kp?.content ? kp.content.split('\n').filter(l => l.trim()).slice(0, 4).map(l => l.replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()).join('\n') : '';
+    const summaryBlock = contentLines ? `<div class="panel-content-summary">${contentLines.slice(0, 220)}</div>` : '';
+    const aiMsg = summary ? `this ${kindLabel} is on your ${orbitLabel.toLowerCase()} orbit.` : `you placed this ${kindLabel} on your ${orbitLabel.toLowerCase()} orbit. what makes it part of who you are?`;
+    return `<div class="panel-eyebrow">${kindLabel.toUpperCase()}</div>
 <div class="panel-subject">${n ? n.label : id}<span class="pill">${orbitLabel}</span></div>
 <div class="conv" id="panel-conv" data-surface="known" data-node="${id}">
-  <div class="msg-ai">${summary || 'you placed this on your ' + orbitLabel.toLowerCase() + ' orbit. what makes it part of who you are?'}</div>
+  ${summaryBlock}
+  <div class="msg-ai">${aiMsg}</div>
 </div>
-<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="tell me more…"><span class="panel-composer-hint">↵ send</span></div>`;
+<div class="panel-composer"><input class="panel-composer-input" type="text" placeholder="add a thought…"><span class="panel-composer-hint">↵ send</span></div>`;
   }
 
   return '';
+}
+
+// ════════════════════════════════════════════════════
+//  PROFILE — full-page synthesized identity view
+// ════════════════════════════════════════════════════
+const PROFILE_TRAITS = [
+  { name: 'Curiosity',       value: 0.92 },
+  { name: 'Empathy',         value: 0.78 },
+  { name: 'Tenacity',        value: 0.85 },
+  { name: 'Craft',           value: 0.88 },
+  { name: 'Patience',        value: 0.62 },
+  { name: 'Decisiveness',    value: 0.72 },
+  { name: 'Imagination',     value: 0.68 },
+  { name: 'Coordination',    value: 0.55 },
+  { name: 'Meticulousness',  value: 0.80 },
+  { name: 'Risk appetite',   value: 0.65 },
+  { name: 'Luck',            value: 0.58 },
+];
+
+const PROFILE_VALUES = [
+  'Work must align with personal mission',
+  'Structured systems enable progress under uncertainty',
+  'Authenticity and emotional honesty matter',
+  'AI should augment human operations, not replace judgment',
+  'Building is the form of expression — if craftsmanship is community service, building is worship',
+  'Growth comes from discomfort pursued deliberately',
+  'Relationships require presence, not performance',
+  'Independence is non-negotiable but loneliness is the cost',
+  'Identity is layered — public precision hides private chaos',
+  'AI must expand human capacity, not substitute for it',
+  'Builders bear responsibility to nudge AI\'s direction',
+  'Show work, don\'t declare it',
+  'User focus is the foundation of product work',
+  'Act from facts and WHY, not from interpretation',
+];
+
+const PROFILE_EXPERTISE = [
+  'Agentic AI workflow design and deployment',
+  '0-to-1 product development with validation',
+  'AI-native PM tooling and copilot workflows',
+  'Remy owner bot product and roadmap',
+  'Field service and mobile product management',
+  'Data analytics and performance metrics',
+  'Workflow automation with n8n and no-code tools',
+  'Mental health tech and AI safety frameworks',
+  'Single-family rental property tech domain',
+];
+
+function buildRadarSVG(traits) {
+  const cx = 300, cy = 240, maxR = 155;
+  const n = traits.length;
+  const rings = [0.25, 0.5, 0.75, 1.0];
+
+  let svg = `<svg viewBox="0 0 600 490" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Rings
+  rings.forEach(r => {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      pts.push(`${cx + Math.cos(angle) * maxR * r},${cy + Math.sin(angle) * maxR * r}`);
+    }
+    svg += `<polygon points="${pts.join(' ')}" class="profile-radar-ring"/>`;
+  });
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    svg += `<line x1="${cx}" y1="${cy}" x2="${cx + Math.cos(angle) * maxR}" y2="${cy + Math.sin(angle) * maxR}" class="profile-radar-axis"/>`;
+  }
+
+  // Data area
+  const dataPts = [];
+  traits.forEach((t, i) => {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const r = maxR * t.value;
+    dataPts.push(`${cx + Math.cos(angle) * r},${cy + Math.sin(angle) * r}`);
+  });
+  svg += `<polygon points="${dataPts.join(' ')}" class="profile-radar-area"/>`;
+
+  // Dots and labels
+  traits.forEach((t, i) => {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const r = maxR * t.value;
+    const dx = cx + Math.cos(angle) * r;
+    const dy = cy + Math.sin(angle) * r;
+    svg += `<circle cx="${dx}" cy="${dy}" class="profile-radar-dot"/>`;
+
+    // Label position (outside the ring)
+    const lx = cx + Math.cos(angle) * (maxR + 30);
+    const ly = cy + Math.sin(angle) * (maxR + 30);
+    const anchor = Math.abs(Math.cos(angle)) < 0.1 ? 'middle' : Math.cos(angle) > 0 ? 'start' : 'end';
+    svg += `<text x="${lx.toFixed(1)}" y="${(ly + 3).toFixed(1)}" text-anchor="${anchor}" class="profile-radar-label">${t.name}</text>`;
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+function buildProfileContent() {
+  const rooted = RIM.filter(v => v.kind === 'bright').map(v => v.name);
+  const forming = RIM.filter(v => v.kind === 'dim').map(v => v.name);
+  const gaps = RIM.filter(v => v.kind === 'gap').map(v => v.name);
+
+  const anchorCount = NODES.filter(n => n.type === 'anchor').length;
+  const knownCount = NODES.filter(n => n.type === 'known').length;
+  const memCount = Object.values(MEMORY_GROUPS).reduce((sum, arr) => sum + arr.length, 0);
+
+  let html = '<div class="profile-inner">';
+
+  // Header
+  html += `<div class="profile-header">
+    <div class="profile-eyebrow">THE SYNTHESIZED YOU</div>
+    <div class="profile-name">Eva</div>
+    <div class="profile-sub">this is what your pieces say about you — today. not fixed, not final. a reflection that moves as you do.</div>
+  </div>`;
+
+  // Stats
+  html += `<div class="profile-stats">
+    <div class="profile-stat"><div class="profile-stat-value">${anchorCount}</div><div class="profile-stat-label">Anchors</div></div>
+    <div class="profile-stat"><div class="profile-stat-value">${memCount}</div><div class="profile-stat-label">Memories</div></div>
+    <div class="profile-stat"><div class="profile-stat-value">${rooted.length + forming.length + gaps.length}</div><div class="profile-stat-label">Values</div></div>
+  </div>`;
+
+  // Traits radar
+  html += `<div class="profile-section">
+    <div class="profile-section-title">Traits</div>
+    <div class="profile-radar">${buildRadarSVG(PROFILE_TRAITS)}</div>
+  </div>`;
+
+  // Values
+  html += `<div class="profile-section">
+    <div class="profile-section-title">Values</div>
+    <ol class="profile-list">`;
+  PROFILE_VALUES.forEach((v, i) => {
+    html += `<li><span class="profile-list-num">${String(i + 1).padStart(2, '0')}</span><span class="profile-list-text">${v}</span></li>`;
+  });
+  html += `</ol></div>`;
+
+  // Expertise
+  html += `<div class="profile-section">
+    <div class="profile-section-title">Expertise</div>
+    <ol class="profile-list">`;
+  PROFILE_EXPERTISE.forEach((e, i) => {
+    html += `<li><span class="profile-list-num">${String(i + 1).padStart(2, '0')}</span><span class="profile-list-text">${e}</span></li>`;
+  });
+  html += `</ol></div>`;
+
+  html += '</div>'; // close .profile-inner
+  return html;
 }
 
 // ════════════════════════════════════════════════════
@@ -1141,7 +1477,9 @@ function showScreen(name) {
     zoomFromChamber();
   } else {
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active', 'zoom-to-chamber', 'zoom-from-chamber', 'unzoom', 'zoom-enter', 'zoom-exit'));
-    document.getElementById('screen-' + name).classList.add('active');
+    const target = document.getElementById('screen-' + name);
+    target.classList.add('active');
+    if (name === 'profile') { const sc = target.querySelector('.profile-scroll'); if (sc) sc.scrollTop = 0; }
   }
 }
 
@@ -1195,6 +1533,9 @@ function openPanel(type, id) {
   state.panelType = type;
   state.panelId = id;
   const panel = document.getElementById('panel');
+  // Set depth: formative anchors, memories, core, gaps feel deep; known pieces feel light
+  const depth = (type === 'known') ? 'light' : 'deep';
+  panel.dataset.depth = depth;
   document.getElementById('panel-content').innerHTML = getPanelContent(type, id);
   panel.classList.add('open');
   const screen = document.getElementById('screen-' + state.screen);
@@ -1341,6 +1682,8 @@ async function init() {
   document.getElementById('chamber-memories').innerHTML = cm.mem;
 
   document.getElementById('draft-spin').innerHTML = genStars(3, 160);
+  document.getElementById('profile-spin').innerHTML = genStars(4, 200);
+
 
   // L1 node clicks
   document.getElementById('l1-spin').addEventListener('click', (e) => {
@@ -1365,7 +1708,8 @@ async function init() {
       const gapName = gapG.dataset.gap;
       openPanel('gap', gapName);
     } else if (coreG) {
-      openPanel('core', 'eva');
+      document.getElementById('profile-content').innerHTML = buildProfileContent();
+      showScreen('profile');
     }
   });
 
@@ -1387,6 +1731,11 @@ async function init() {
     showScreen('l1');
   });
 
+  // Profile back
+  document.getElementById('profile-back').addEventListener('click', () => {
+    showScreen('l1');
+  });
+
   // Panel close
   document.getElementById('panel-close').addEventListener('click', closePanel);
 
@@ -1396,6 +1745,7 @@ async function init() {
       if (state.panelOpen) closePanel();
       else if (state.screen === 'chamber') showScreen('l1');
       else if (state.screen === 'draft') showScreen('l1');
+      else if (state.screen === 'profile') showScreen('l1');
     }
   });
 
@@ -1485,6 +1835,402 @@ async function init() {
 }
 
 init();
+
+// ── GALAXY BACKGROUND — domain-warped nebula inspired by Galaxy Trip (Shadertoy) ──
+// Technique: fbm + domain warping (marble/turbulence) — warm amber palette, very subtle
+(function() {
+  const canvas = document.getElementById('galaxy-bg');
+  if (!canvas) return;
+  const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
+  if (!gl) return;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // cap for perf
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const VS = `attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0,1);}`;
+
+  const FS = `
+precision highp float;
+uniform vec2 iResolution;
+uniform float iTime;
+
+// --- hash-based noise (no texture needed) ---
+float hash(float n) { return fract(sin(n) * 43758.5453123); }
+float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash2(i);
+  float b = hash2(i + vec2(1.0, 0.0));
+  float c = hash2(i + vec2(0.0, 1.0));
+  float d = hash2(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+// --- fbm with 5 octaves ---
+float fbm(vec2 p) {
+  float f = 0.0;
+  float amp = 0.5;
+  mat2 m = mat2(1.6, 1.2, -1.2, 1.6); // rotation to break up repetition
+  for (int i = 0; i < 5; i++) {
+    f += amp * noise(p);
+    p = m * p;
+    amp *= 0.5;
+  }
+  return f;
+}
+
+// --- domain warping ---
+float warpedFbm(vec2 p, float t) {
+  // first warp
+  vec2 q = vec2(
+    fbm(p + vec2(0.0, 0.0) + t * 0.012),
+    fbm(p + vec2(5.2, 1.3) - t * 0.008)
+  );
+  // second warp (warping the warp)
+  vec2 r = vec2(
+    fbm(p + 4.0 * q + vec2(1.7, 9.2) + t * 0.006),
+    fbm(p + 4.0 * q + vec2(8.3, 2.8) - t * 0.010)
+  );
+  return fbm(p + 4.0 * r);
+}
+
+void main() {
+  vec2 uv = gl_FragCoord.xy / iResolution.xy;
+  // center and scale
+  vec2 p = (gl_FragCoord.xy - 0.5 * iResolution.xy) / min(iResolution.x, iResolution.y);
+  p *= 2.8; // zoom out a bit to see more structure
+
+  float t = iTime;
+
+  // compute warped noise
+  float f = warpedFbm(p, t);
+
+  // second layer at different scale for depth
+  float f2 = warpedFbm(p * 0.6 + vec2(10.0), t * 0.7);
+
+  // blend layers
+  float combined = mix(f, f2, 0.4);
+
+  // --- warm amber/copper palette ---
+  // map noise value to color
+  vec3 col1 = vec3(0.18, 0.08, 0.02);   // deep brown (shadows)
+  vec3 col2 = vec3(0.60, 0.28, 0.08);   // warm copper
+  vec3 col3 = vec3(0.95, 0.70, 0.35);   // bright amber
+  vec3 col4 = vec3(0.35, 0.22, 0.45);   // cool violet accent (depth)
+
+  vec3 color = mix(col1, col2, smoothstep(0.0, 0.45, combined));
+  color = mix(color, col3, smoothstep(0.45, 0.75, combined));
+  // add subtle cool accent in the mid-tones
+  color = mix(color, col4, smoothstep(0.3, 0.5, combined) * (1.0 - smoothstep(0.5, 0.7, combined)) * 0.25);
+
+  // --- brightness envelope ---
+  // vignette: tight falloff, most of the edges stay dark
+  float dist = length((uv - 0.5) * vec2(iResolution.x / iResolution.y, 1.0));
+  float vignette = 1.0 - smoothstep(0.1, 0.48, dist);
+
+  // crush low values hard — dark regions stay truly black
+  float contrast = smoothstep(0.35, 0.65, combined);
+
+  // overall brightness — restrained so the galaxy is a hint, not a wash
+  float brightness = 0.055;
+  color *= brightness * vignette * contrast;
+
+  // extra fade near the void core center so the nebula star shader stands out
+  float centerFade = smoothstep(0.0, 0.22, dist);
+  color *= mix(0.1, 1.0, centerFade);
+
+  gl_FragColor = vec4(color, 1.0);
+}`;
+
+  function compile(src, type) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.warn('Galaxy shader:', gl.getShaderInfoLog(sh));
+      return null;
+    }
+    return sh;
+  }
+  const vs = compile(VS, gl.VERTEX_SHADER);
+  const fs = compile(FS, gl.FRAGMENT_SHADER);
+  if (!vs || !fs) return;
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.warn('Galaxy link:', gl.getProgramInfoLog(prog));
+    return;
+  }
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const aLoc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(aLoc);
+  gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes = gl.getUniformLocation(prog, 'iResolution');
+  const uTime = gl.getUniformLocation(prog, 'iTime');
+
+  const t0 = performance.now();
+  let raf;
+
+  function render() {
+    const t = (performance.now() - t0) / 1000;
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, t);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    raf = requestAnimationFrame(render);
+  }
+
+  // only run when L1 visible
+  const obs = new MutationObserver(() => {
+    const on = document.getElementById('screen-l1').classList.contains('active');
+    if (on && !raf) { resize(); render(); }
+    else if (!on && raf) { cancelAnimationFrame(raf); raf = null; }
+  });
+  obs.observe(document.getElementById('screen-l1'), { attributes: true, attributeFilter: ['class'] });
+  render();
+})();
+
+// ── NEBULA STAR — WebGL port of "Dusty nebula 4" by Duke (Shadertoy MsVXWW) ──
+// License: CC BY-NC-SA 3.0  — uses noise texture approach from nebula.html
+(function() {
+  const canvas = document.getElementById('nebula-star');
+  if (!canvas) return;
+  const gl = canvas.getContext('webgl', { alpha: false, antialias: false });
+  if (!gl) return;
+
+  const VS = `attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0,1);}`;
+
+  const FS = `
+precision highp float;
+uniform vec2 iResolution;
+uniform float iTime;
+uniform sampler2D iChannel0;
+
+#define ROTATION
+#define DITHERING
+#define BACKGROUND
+
+#define pi 3.14159265
+#define R(p, a) p=cos(a)*p+sin(a)*vec2(p.y, -p.x)
+
+float noise(in vec3 x) {
+  vec3 p = floor(x);
+  vec3 f = fract(x);
+  f = f*f*(3.0-2.0*f);
+  vec2 uv = (p.xy + vec2(37.0,17.0)*p.z) + f.xy;
+  vec2 rg = texture2D(iChannel0, (uv + 0.5)/256.0).yx;
+  return 1.0 - 0.82*mix(rg.x, rg.y, f.z);
+}
+
+float rand(vec2 co) {
+  return fract(sin(dot(co*0.123, vec2(12.9898,78.233))) * 43758.5453);
+}
+
+const float nudge = 0.739513;
+float normalizer = 1.0 / sqrt(1.0 + nudge*nudge);
+
+float SpiralNoiseC(vec3 p) {
+  float n = 0.0; float iter = 1.0;
+  for (int i = 0; i < 8; i++) {
+    n += -abs(sin(p.y*iter) + cos(p.x*iter)) / iter;
+    p.xy += vec2(p.y, -p.x) * nudge; p.xy *= normalizer;
+    p.xz += vec2(p.z, -p.x) * nudge; p.xz *= normalizer;
+    iter *= 1.733733;
+  }
+  return n;
+}
+float SpiralNoise3D(vec3 p) {
+  float n = 0.0; float iter = 1.0;
+  for (int i = 0; i < 5; i++) {
+    n += (sin(p.y*iter) + cos(p.x*iter)) / iter;
+    p.xz += vec2(p.z, -p.x) * nudge; p.xz *= normalizer;
+    iter *= 1.33733;
+  }
+  return n;
+}
+float NebulaNoise(vec3 p) {
+  float f = p.y + 4.5;
+  f -= SpiralNoiseC(p.xyz);
+  f += SpiralNoiseC(p.zxy*0.5123+100.0)*4.0;
+  f -= SpiralNoise3D(p);
+  return f;
+}
+float map(vec3 p) {
+  #ifdef ROTATION
+  R(p.xz, iTime*0.1);
+  #endif
+  return abs(NebulaNoise(p/0.5)*0.5) + 0.03;
+}
+
+vec3 computeColor(float density, float radius) {
+  vec3 result = mix(vec3(1.0,0.9,0.8), vec3(0.4,0.15,0.1), density);
+  result *= mix(7.0*vec3(0.8,1.0,1.0), 1.5*vec3(0.48,0.53,0.5), min((radius+0.05)/0.9, 1.15));
+  return result;
+}
+
+bool RaySphereIntersect(vec3 org, vec3 dir, out float near, out float far) {
+  float b = dot(dir, org);
+  float c = dot(org, org) - 8.0;
+  float delta = b*b - c;
+  if (delta < 0.0) return false;
+  float sq = sqrt(delta);
+  near = -b - sq; far = -b + sq;
+  return far > 0.0;
+}
+
+void main() {
+  vec3 rd = normalize(vec3((gl_FragCoord.xy - 0.5*iResolution)/iResolution.y, 1.0));
+  vec3 ro = vec3(0.0, 0.0, -6.0);
+
+  R(rd.yz, -pi*3.93); R(rd.xz, pi*3.2);
+  R(ro.yz, -pi*3.93); R(ro.xz, pi*3.2);
+
+  #ifdef DITHERING
+  vec2 seed = gl_FragCoord.xy/iResolution + fract(iTime);
+  #endif
+
+  float ld=0.,td=0.,w=0.,d=1.,t=0.;
+  const float h = 0.1;
+  vec4 sum = vec4(0.0);
+  float mn=0.,mx=0.;
+
+  if (RaySphereIntersect(ro, rd, mn, mx)) {
+    t = mn*step(t,mn);
+    for (int i=0; i<56; i++) {
+      vec3 pos = ro + t*rd;
+      if (td>.9 || d<.1*t || t>10. || sum.a>.99 || t>mx) break;
+      float d = map(pos);
+      d = max(d, 0.08);
+      vec3 ldst = -pos;
+      float lD = max(length(ldst), 0.001);
+      sum.rgb += vec3(1.0,0.5,0.25)/(lD*lD)/30.0;
+      if (d < h) {
+        ld = h - d;
+        w = (1.0 - td) * ld;
+        td += w + 1.0/200.0;
+        vec4 col = vec4(computeColor(td, lD), td);
+        col.a *= 0.185; col.rgb *= col.a;
+        sum += col*(1.0 - sum.a);
+      }
+      td += 1.0/70.0;
+      d = max(d, 0.04);
+      #ifdef DITHERING
+      d = abs(d)*(0.8 + 0.2*rand(seed*vec2(float(i))));
+      #endif
+      t += max(d*0.1*max(min(length(ldst),length(ro)),1.0), 0.02);
+    }
+    sum *= 1.0/exp(ld*0.2)*0.6;
+    sum = clamp(sum, 0.0, 1.0);
+    sum.xyz = sum.xyz*sum.xyz*(3.0-2.0*sum.xyz);
+  }
+
+  #ifdef BACKGROUND
+  if (td < 0.8) {
+    vec3 stars = vec3(noise(rd*500.0)*0.5+0.5);
+    vec3 starbg = mix(vec3(0), vec3(0.8,0.9,1.0), smoothstep(0.99,1.0,stars)*clamp(dot(vec3(0),rd)+0.75,0.,1.));
+    sum.xyz += clamp(starbg, 0.0, 1.0);
+  }
+  #endif
+
+  gl_FragColor = vec4(sum.xyz, 1.0);
+}`;
+
+  function compile(src, type) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.warn('Nebula shader:', gl.getShaderInfoLog(sh));
+      return null;
+    }
+    return sh;
+  }
+  const vs = compile(VS, gl.VERTEX_SHADER);
+  const fs = compile(FS, gl.FRAGMENT_SHADER);
+  if (!vs || !fs) return;
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+  gl.useProgram(prog);
+
+  // fullscreen quad
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const aLoc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(aLoc);
+  gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+
+  // generate 256×256 noise texture (matches Shadertoy iChannel0)
+  const sz = 256;
+  const noiseData = new Uint8Array(sz * sz * 4);
+  for (let i = 0; i < sz * sz; i++) {
+    noiseData[i*4]   = Math.random() * 255 | 0;
+    noiseData[i*4+1] = Math.random() * 255 | 0;
+    noiseData[i*4+2] = Math.random() * 255 | 0;
+    noiseData[i*4+3] = 255;
+  }
+  const tex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sz, sz, 0, gl.RGBA, gl.UNSIGNED_BYTE, noiseData);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+  const uRes = gl.getUniformLocation(prog, 'iResolution');
+  const uTime = gl.getUniformLocation(prog, 'iTime');
+  const uCh0 = gl.getUniformLocation(prog, 'iChannel0');
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+  gl.uniform1i(uCh0, 0);
+
+  const t0 = performance.now();
+  let raf;
+  const half = canvas.width / 2;
+  let coreSpark = null;
+
+  function findCore() {
+    coreSpark = document.querySelector('.core-spark');
+  }
+
+  function render() {
+    if (!coreSpark) findCore();
+    // track void core position through rotation
+    if (coreSpark) {
+      const r = coreSpark.getBoundingClientRect();
+      canvas.style.left = (r.x + r.width / 2 - half) + 'px';
+      canvas.style.top = (r.y + r.height / 2 - half) + 'px';
+    }
+    gl.uniform1f(uTime, (performance.now() - t0) / 1000);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    raf = requestAnimationFrame(render);
+  }
+
+  // only run when L1 visible
+  const obs = new MutationObserver(() => {
+    const on = document.getElementById('screen-l1').classList.contains('active');
+    if (on && !raf) render();
+    else if (!on && raf) { cancelAnimationFrame(raf); raf = null; }
+  });
+  obs.observe(document.getElementById('screen-l1'), { attributes: true, attributeFilter: ['class'] });
+  render();
+})();
 </script>
 </body>
 </html>
