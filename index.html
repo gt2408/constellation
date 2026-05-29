@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Constellation</title>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.164.1/build/three.module.js","three/addons/":"https://unpkg.com/three@0.164.1/examples/jsm/"}}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -30,7 +33,7 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 
 /* ── SCREENS ── */
 #app{position:relative;width:100vw;height:100vh;overflow:hidden}
-.screen{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(ellipse 1300px 1000px at 50% 50%,var(--bg-warm) 0%,transparent 65%),var(--bg);opacity:0;pointer-events:none;transition:opacity 500ms ease;overflow:hidden}
+.screen{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(ellipse 1300px 1000px at 50% 50%,var(--bg-warm) 0%,transparent 65%),var(--bg);opacity:0;pointer-events:none;transition:opacity 500ms ease;overflow:hidden;isolation:isolate}
 .screen.active{opacity:1;pointer-events:auto}
 
 /* ── ZOOM TRANSITIONS L1 ↔ CHAMBER ── */
@@ -54,15 +57,10 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 .twinkle-d{animation:twinkle 3.8s ease-in-out infinite 2.4s}
 @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
 
-/* ── ANCHOR BLOOM ── */
-.anchor-bloom{opacity:.85;animation:bloomPulse 6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-@keyframes bloomPulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
-
-/* ── GALAXY BACKGROUND (WebGL) ── */
-.galaxy-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;z-index:0}
-
-/* ── NEBULA STAR (WebGL) ── */
-.nebula-canvas{position:absolute;pointer-events:none;mix-blend-mode:screen;z-index:1;opacity:.35}
+/* ── THREE.JS CONTAINER ── */
+#three-container{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+#three-container canvas{display:block}
+.screen.dimmed #three-container{opacity:.25;transition:opacity 400ms ease}
 
 /* ── WISPS ── */
 .wisp{transform-box:fill-box;transform-origin:center}
@@ -72,54 +70,6 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 @keyframes wispA{0%{transform:translate(0,0) scale(1);opacity:.55}100%{transform:translate(45px,-30px) scale(1.08);opacity:.7}}
 @keyframes wispB{0%{transform:translate(0,0) scale(1);opacity:.45}100%{transform:translate(-35px,40px) scale(1.06);opacity:.6}}
 @keyframes wispC{0%{transform:translate(0,0) scale(1);opacity:.55}100%{transform:translate(25px,35px) scale(1.1);opacity:.65}}
-
-/* ── SIGNALS ── */
-.signal{opacity:.55}
-.s-a{animation:sTwinkle 2.6s ease-in-out infinite .2s}
-.s-b{animation:sTwinkle 3.1s ease-in-out infinite 1.1s}
-.s-c{animation:sTwinkle 2.9s ease-in-out infinite .6s}
-.s-d{animation:sTwinkle 3.4s ease-in-out infinite 1.8s}
-@keyframes sTwinkle{0%,100%{opacity:.3}50%{opacity:.88}}
-
-/* ── NODES & LABELS ── */
-.node-label-anchor{font-family:var(--serif);font-weight:400;font-size:14px;fill:var(--amber);letter-spacing:.005em}
-.node-label-known{font-family:var(--serif);font-weight:400;font-size:11px;fill:var(--text-secondary);letter-spacing:.005em;opacity:0;transition:opacity 500ms ease}
-.node-label-known.orbit-behaviour{font-size:10px}
-.node:hover .node-label-known{opacity:.88}
-.node{transition:opacity 300ms ease;cursor:pointer}
-.node:hover{filter:brightness(1.15)}
-
-/* ── QUIET NOTICING ── */
-
-/* ── OPEN SEATS ── */
-.empty-seat-haze{fill:url(#gOpenSeatHaze);opacity:.45;animation:seatDrift 11s ease-in-out infinite alternate;transform-origin:center;transform-box:fill-box}
-.empty-seat-glow{fill:url(#gOpenSeatGlow);opacity:.85;animation:seatBreathe 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-.empty-seat-inner{fill:url(#gOpenSeatInner);opacity:.9;animation:seatBreathe 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-.empty-seat-core{fill:rgba(255,235,190,0.95);filter:drop-shadow(0 0 4px rgba(244,178,102,0.85));animation:seatPulse 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-.empty-seat-ripple{fill:none;stroke:rgba(244,178,102,0.6);stroke-width:.8;transform-origin:center;transform-box:fill-box;animation:seatPing 4s ease-out infinite}
-@keyframes seatBreathe{0%,100%{opacity:.55;transform:scale(.90)}50%{opacity:1;transform:scale(1.10)}}
-@keyframes seatPulse{0%,100%{opacity:.65;transform:scale(.85)}50%{opacity:1;transform:scale(1.25)}}
-@keyframes seatDrift{0%{opacity:.30;transform:scale(.94) rotate(-3deg)}100%{opacity:.50;transform:scale(1.06) rotate(3deg)}}
-@keyframes seatPing{0%{opacity:.55;transform:scale(.6)}60%{opacity:.08}100%{opacity:0;transform:scale(2.4)}}
-.node-open{cursor:pointer}
-.node-open:hover .empty-seat-glow{opacity:1;transform:scale(1.2)}
-.node-open:hover .empty-seat-inner{opacity:1}
-.node-open:hover .empty-seat-core{opacity:1;filter:drop-shadow(0 0 6px rgba(244,178,102,0.95))}
-.seat-prompt{font-family:var(--serif);font-style:italic;font-weight:400;font-size:11px;fill:var(--text-secondary);opacity:0;transition:opacity 200ms ease;letter-spacing:.005em;pointer-events:none}
-.node-open:hover .seat-prompt{opacity:.78}
-
-/* ── VOID CORE + RIM ── */
-.core-spark{animation:sparkPulse 5s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-@keyframes sparkPulse{0%,100%{opacity:.45}50%{opacity:.85}}
-.rim-arc{fill:none;stroke-linecap:round;transition:all 1s ease}
-.rim-arc.bright{stroke:rgba(244,178,102,0.85);stroke-width:2.5;filter:drop-shadow(0 0 4px rgba(244,178,102,0.55))}
-.rim-arc.dim{stroke:rgba(244,178,102,0.42);stroke-width:1.4;stroke-dasharray:2 3}
-.well-contour{fill:none;stroke:rgba(244,178,102,0.10);stroke-width:.6;stroke-dasharray:1 5}
-.gap-label{font-family:var(--serif);font-style:italic;font-weight:400;font-size:11.5px;fill:rgba(244,178,102,0.78);letter-spacing:.04em;cursor:pointer}
-.gap-label .gap-name{font-weight:500;fill:rgba(244,178,102,0.95)}
-.gap-group{animation:gapBreathe 6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
-.gap-group.delayed{animation-delay:-3s}
-@keyframes gapBreathe{0%,100%{opacity:.75}50%{opacity:1}}
 
 /* ── TOOLBAR ── */
 .toolbar{position:absolute;top:28px;left:40px;right:40px;display:flex;align-items:flex-start;justify-content:space-between;z-index:5}
@@ -203,7 +153,9 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 .screen.dimmed .constellation{opacity:.25;transition:opacity 400ms ease}
 
 /* ── CHAMBER ── */
-#screen-chamber{background:radial-gradient(ellipse 1300px 1000px at 50% 50%,rgba(22,15,6,0.6) 0%,transparent 65%),var(--bg)}
+#screen-chamber{background:radial-gradient(ellipse 1300px 1000px at 50% 50%,rgba(22,15,6,0.6) 0%,transparent 65%)}
+#screen-chamber svg.constellation{display:none}
+#screen-chamber .chamber-anchor-caption{display:none}
 .chamber-bar{position:absolute;top:28px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;z-index:7;font-family:var(--sans)}
 .chamber-back{display:inline-flex;align-items:center;gap:10px;color:var(--text-secondary);text-decoration:none;font-weight:400;font-size:11px;letter-spacing:.26em;text-transform:uppercase;transition:color .2s;cursor:pointer;background:none;border:none}
 .chamber-back:hover{color:var(--text-primary)}
@@ -353,11 +305,10 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 
 /* ── REDUCED MOTION ── */
 @media(prefers-reduced-motion:reduce){
-  .spin,.counter-rot,.star,.wisp,.signal,.core-spark,.gap-group,.empty-seat-glow,.empty-seat-inner,.empty-seat-core,.empty-seat-haze,.empty-seat-ripple,.new-anchor-body,.new-anchor-pulse,.new-anchor-label,.chamber-anchor-spark,.chamber-mem-body,.mic-pulse,.ai-marker-spark,.thinking-dot,.halo-cloud{animation:none !important}
+  .spin,.counter-rot,.star,.wisp,.new-anchor-body,.new-anchor-pulse,.new-anchor-label,.chamber-anchor-spark,.chamber-mem-body,.mic-pulse,.ai-marker-spark,.thinking-dot,.halo-cloud{animation:none !important}
   .zooming{transition:none !important}
   .screen{transition:none !important}
   .panel-side{transition:none !important}
-  .node{transition:none !important}
 }
 </style>
 </head>
@@ -401,78 +352,6 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
     <stop offset="22%" stop-color="#f4b266" stop-opacity="0.95"/>
     <stop offset="55%" stop-color="#d68a48" stop-opacity="0.45"/>
     <stop offset="100%" stop-color="#a8632c" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gAnchorCopper" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#fcd2b0"/>
-    <stop offset="22%" stop-color="#e08850" stop-opacity="0.95"/>
-    <stop offset="55%" stop-color="#b46038" stop-opacity="0.45"/>
-    <stop offset="100%" stop-color="#7a3a1c" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gAnchorGold" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#fef0c8"/>
-    <stop offset="22%" stop-color="#e8c878" stop-opacity="0.95"/>
-    <stop offset="55%" stop-color="#c4a050" stop-opacity="0.40"/>
-    <stop offset="100%" stop-color="#806620" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gAnchorRose" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#fde0d2"/>
-    <stop offset="22%" stop-color="#e8a890" stop-opacity="0.95"/>
-    <stop offset="55%" stop-color="#c07868" stop-opacity="0.40"/>
-    <stop offset="100%" stop-color="#7c4438" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gKnownCream" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#fbf2d6"/>
-    <stop offset="30%" stop-color="#e6d4a8" stop-opacity="0.9"/>
-    <stop offset="70%" stop-color="#b8a878" stop-opacity="0.30"/>
-    <stop offset="100%" stop-color="#8a7a48" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gKnownWarm" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#fbe8c0"/>
-    <stop offset="30%" stop-color="#e8d4a0" stop-opacity="0.9"/>
-    <stop offset="70%" stop-color="#b8a060" stop-opacity="0.30"/>
-    <stop offset="100%" stop-color="#866020" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gKnownBlue" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#edf2fa"/>
-    <stop offset="30%" stop-color="#b8c8e0" stop-opacity="0.85"/>
-    <stop offset="70%" stop-color="#7c90b8" stop-opacity="0.28"/>
-    <stop offset="100%" stop-color="#4a5878" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gKnownPaleRose" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#fae0d8"/>
-    <stop offset="30%" stop-color="#e0c0b8" stop-opacity="0.85"/>
-    <stop offset="70%" stop-color="#a8807c" stop-opacity="0.28"/>
-    <stop offset="100%" stop-color="#704848" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gKnownCyan" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#e4f0f0"/>
-    <stop offset="30%" stop-color="#b0d0d8" stop-opacity="0.85"/>
-    <stop offset="70%" stop-color="#608890" stop-opacity="0.28"/>
-    <stop offset="100%" stop-color="#385058" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gSignal" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#f5e9d4"/>
-    <stop offset="40%" stop-color="#e6d4a8" stop-opacity="0.75"/>
-    <stop offset="100%" stop-color="#c8b890" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gWellOuter" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="rgba(4,6,14,0.88)"/>
-    <stop offset="30%" stop-color="rgba(5,7,16,0.72)"/>
-    <stop offset="55%" stop-color="rgba(6,9,18,0.50)"/>
-    <stop offset="78%" stop-color="rgba(6,9,18,0.20)"/>
-    <stop offset="100%" stop-color="rgba(6,9,18,0)"/>
-  </radialGradient>
-  <radialGradient id="gWellInner" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="rgba(2,3,8,0.96)"/>
-    <stop offset="40%" stop-color="rgba(2,3,8,0.78)"/>
-    <stop offset="70%" stop-color="rgba(2,3,8,0.45)"/>
-    <stop offset="90%" stop-color="rgba(2,3,8,0.15)"/>
-    <stop offset="100%" stop-color="rgba(2,3,8,0)"/>
-  </radialGradient>
-  <radialGradient id="gWellInteriorHome" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="rgba(82,50,22,0.20)"/>
-    <stop offset="50%" stop-color="rgba(40,26,12,0.18)"/>
-    <stop offset="100%" stop-color="rgba(2,3,8,0)"/>
   </radialGradient>
   <radialGradient id="gNebulaRose" cx="50%" cy="50%" r="50%">
     <stop offset="0%" stop-color="rgba(220,110,140,0.32)"/>
@@ -523,66 +402,6 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
     <stop offset="60%" stop-color="#b8923c" stop-opacity="0.32"/>
     <stop offset="100%" stop-color="#806620" stop-opacity="0"/>
   </radialGradient>
-  <radialGradient id="gBloomAmber" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#f4b266" stop-opacity="0.28"/>
-    <stop offset="25%" stop-color="#d68a48" stop-opacity="0.12"/>
-    <stop offset="55%" stop-color="#a8632c" stop-opacity="0.04"/>
-    <stop offset="100%" stop-color="#7a4a1c" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gBloomCopper" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#e08850" stop-opacity="0.26"/>
-    <stop offset="25%" stop-color="#b46038" stop-opacity="0.11"/>
-    <stop offset="55%" stop-color="#7a3a1c" stop-opacity="0.035"/>
-    <stop offset="100%" stop-color="#4a2010" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gBloomGold" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#e8c878" stop-opacity="0.25"/>
-    <stop offset="25%" stop-color="#c4a050" stop-opacity="0.10"/>
-    <stop offset="55%" stop-color="#806620" stop-opacity="0.03"/>
-    <stop offset="100%" stop-color="#504010" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gBloomRose" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#e8a890" stop-opacity="0.24"/>
-    <stop offset="25%" stop-color="#c07868" stop-opacity="0.10"/>
-    <stop offset="55%" stop-color="#7c4438" stop-opacity="0.03"/>
-    <stop offset="100%" stop-color="#4a2820" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gOpenSeatGlow" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#f4b266" stop-opacity="0.32"/>
-    <stop offset="18%" stop-color="#e6a050" stop-opacity="0.18"/>
-    <stop offset="45%" stop-color="#c8884a" stop-opacity="0.06"/>
-    <stop offset="100%" stop-color="#c8884a" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gOpenSeatInner" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#ffe8c0" stop-opacity="0.50"/>
-    <stop offset="30%" stop-color="#f4c888" stop-opacity="0.22"/>
-    <stop offset="65%" stop-color="#d6a060" stop-opacity="0.05"/>
-    <stop offset="100%" stop-color="#d6a060" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gOpenSeatHaze" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#e8b870" stop-opacity="0.20"/>
-    <stop offset="30%" stop-color="#c89850" stop-opacity="0.10"/>
-    <stop offset="65%" stop-color="#8a7a48" stop-opacity="0.025"/>
-    <stop offset="100%" stop-color="#8a7a48" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gStarBloom" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#f5e9d4" stop-opacity="0.38"/>
-    <stop offset="15%" stop-color="#f5e9d4" stop-opacity="0.15"/>
-    <stop offset="40%" stop-color="#f5e9d4" stop-opacity="0.04"/>
-    <stop offset="100%" stop-color="#f5e9d4" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gStarBloomCool" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#c4d2e8" stop-opacity="0.32"/>
-    <stop offset="15%" stop-color="#c4d2e8" stop-opacity="0.12"/>
-    <stop offset="40%" stop-color="#c4d2e8" stop-opacity="0.035"/>
-    <stop offset="100%" stop-color="#c4d2e8" stop-opacity="0"/>
-  </radialGradient>
-  <radialGradient id="gStarBloomWarm" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#f0c898" stop-opacity="0.35"/>
-    <stop offset="15%" stop-color="#f0c898" stop-opacity="0.14"/>
-    <stop offset="40%" stop-color="#f0c898" stop-opacity="0.038"/>
-    <stop offset="100%" stop-color="#f0c898" stop-opacity="0"/>
-  </radialGradient>
 </defs>
 </svg>
 
@@ -600,20 +419,13 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 <div id="app">
   <!-- L1 HOME -->
   <div id="screen-l1" class="screen active">
-    <canvas id="galaxy-bg" class="galaxy-canvas"></canvas>
     <main class="stage">
-      <svg class="constellation" viewBox="-720 -450 1440 900" preserveAspectRatio="xMidYMid slice" shape-rendering="geometricPrecision">
-        <circle cx="0" cy="0" r="540" fill="url(#coreGlowLargeFixed)"/>
-        <g class="rotator" transform="translate(0,-80)">
-          <g class="spin" id="l1-spin"></g>
-        </g>
-      </svg>
+      <div id="three-container"></div>
       <div class="search-result-pin" id="search-pin">
         <div class="pin-eyebrow">1 match</div>
         <div class="pin-prose">care lives only on your rim — no memory roots it yet.<br><span class="pin-cta">click the gap to begin →</span></div>
       </div>
     </main>
-    <canvas id="nebula-star" class="nebula-canvas" width="150" height="150" style="width:150px;height:150px"></canvas>
     <header class="toolbar">
       <div class="brand"><h1>Constellation</h1><div class="subtitle">an identity interface for personal AI</div></div>
       <div class="tools">
@@ -758,7 +570,11 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
   </aside>
 </div>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 // ════════════════════════════════════════════════════
 //  DATA LAYER — transforms Eva v4 JSON into render arrays
 // ════════════════════════════════════════════════════
@@ -888,7 +704,6 @@ function saveData() {
 
 const SIZES = { anchor:18, known:11, open:6 };
 const LABEL_OFFSET = { anchor:22, known:14 };
-const BLOOM_GRADS = { amber:'gBloomAmber', copper:'gBloomCopper', gold:'gBloomGold', rose:'gBloomRose' };
 
 // ════════════════════════════════════════════════════
 //  HELPERS
@@ -976,80 +791,6 @@ function genWisps() {
 <ellipse class="wisp wisp-c" cx="-100" cy="260" rx="300" ry="180" fill="url(#wispDeep)" opacity="0.55"/>`;
 }
 
-function genSignals() {
-  return SIGNALS.map(s => {
-    const r = ORBITS.behaviour.r + s.jit;
-    const p = polar(s.angle, r);
-    return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="url(#gSignal)" class="signal${s.tw ? ' ' + s.tw : ''}" data-signal="1"/>`;
-  }).join('');
-}
-
-function genVoidCore(careOverride) {
-  let arcs = '', gaps = '';
-  const rimR = 64, span = 60;
-  RIM.forEach((v, i) => {
-    const start = v.center - span / 2, end = v.center + span / 2;
-    const kind = (careOverride && v.name === 'care') ? careOverride : v.kind;
-    if (kind === 'gap') {
-      const lp = polar(v.center, rimR + 22);
-      const a = ((v.center % 360) + 360) % 360;
-      let anc = 'middle';
-      if (a > 20 && a < 160) anc = 'start';
-      else if (a > 200 && a < 340) anc = 'end';
-      gaps += `<g class="gap-group${i % 2 === 0 ? ' delayed' : ''}" data-gap="${v.name}" style="cursor:pointer">
-        <text x="${lp.x.toFixed(1)}" y="${lp.y.toFixed(1)}" text-anchor="${anc}" dominant-baseline="middle" class="gap-label counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">
-          <tspan class="gap-name">${v.name}</tspan>
-        </text>
-      </g>`;
-    } else {
-      arcs += `<path d="${arcPath(rimR, start, end)}" class="rim-arc ${kind}" data-rim="${v.name}"/>`;
-    }
-  });
-  return `<g class="core-group core-negative">
-    <circle cx="0" cy="0" r="260" fill="url(#gWellOuter)"/>
-    <circle cx="0" cy="0" r="160" fill="url(#gWellInner)"/>
-    <circle cx="0" cy="0" r="62" fill="url(#gWellInteriorHome)"/>
-    <g id="gap-labels">${gaps}</g>
-    <circle cx="0" cy="0" r="2" fill="#fff4d8" class="core-spark"/>
-  </g>`;
-}
-
-function genNodes() {
-  let s = '';
-  NODES.forEach((n, idx) => {
-    const p = nodePos(n);
-    if (n.type === 'open') {
-      const phase = (idx % 4) * -1.0;
-      const driftPhase = (idx % 3) * -3.5;
-      const ripple2 = phase - 2.0;
-      const lbl = labelAnchor(p.angle);
-      const lp = polar(p.angle, p.r + 20);
-      s += `<g class="node node-open" data-id="${n.id}" data-type="open">
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="12" class="empty-seat-ripple" style="animation-delay:${phase}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="12" class="empty-seat-ripple" style="animation-delay:${ripple2}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="28" class="empty-seat-haze" style="animation-delay:${driftPhase}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" class="empty-seat-glow" style="animation-delay:${phase}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="8" class="empty-seat-inner" style="animation-delay:${phase}s"/>
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" class="empty-seat-core" style="animation-delay:${phase}s"/>
-        <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="seat-prompt counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">${n.prompt || ''}</text>
-      </g>`;
-    } else {
-      const size = SIZES[n.type];
-      const grad = COLOR_GRADS[n.color] || 'gAnchorAmber';
-      const lbl = labelAnchor(p.angle);
-      const lp = polar(p.angle, p.r + LABEL_OFFSET[n.type]);
-      const labelCls = n.type === 'anchor' ? 'node-label-anchor' : ('node-label-known' + (n.orbit === 'behaviour' ? ' orbit-behaviour' : ''));
-      const bloomGrad = n.type === 'anchor' ? (BLOOM_GRADS[n.color] || 'gBloomAmber') : '';
-      s += `<g class="node node-${n.type}" data-id="${n.id}" data-type="${n.type}">
-        ${bloomGrad ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${size * 3.2}" fill="url(#${bloomGrad})" class="anchor-bloom"/>` : ''}
-        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${size}" fill="url(#${grad})"/>
-        <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="${labelCls} counter-rot" style="transform-origin:${lp.x.toFixed(1)}px ${lp.y.toFixed(1)}px">${n.label}</text>
-      </g>`;
-    }
-  });
-  return s;
-}
-
 function genChamberHalo() {
   return `<circle cx="0" cy="0" r="640" fill="url(#coreGlowLargeFixed)"/>
 <ellipse class="halo-cloud halo-drift-a" cx="-50" cy="20" rx="340" ry="260" fill="url(#gNebulaDeepGold)" opacity="0.65"/>
@@ -1076,9 +817,7 @@ function genChamberMemories(anchorId) {
 }
 
 function rebuildChamber(anchorId) {
-  const cm = genChamberMemories(anchorId);
-  document.getElementById('chamber-connectors').innerHTML = cm.conn;
-  document.getElementById('chamber-memories').innerHTML = cm.mem;
+  // 3D chamber is now built by buildChamberScene(); update HTML overlays only
   const anchor = NODES.find(n => n.id === anchorId);
   if (anchor) {
     const nameEl = document.getElementById('chamber-anchor-name');
@@ -1086,6 +825,9 @@ function rebuildChamber(anchorId) {
     if (nameEl) nameEl.textContent = anchor.label;
     const memCount = (MEMORY_GROUPS[anchorId] || []).length;
     if (metaEl) metaEl.textContent = `${memCount} memor${memCount === 1 ? 'y' : 'ies'} · ${ORBITS[anchor.orbit]?.label || anchor.orbit}`;
+    // Update chamber chat placeholder with anchor name
+    const chamberChat = document.querySelector('#screen-chamber .chat-input');
+    if (chamberChat) chamberChat.placeholder = `add another memory of ${anchor.label}…`;
   }
 }
 
@@ -1484,48 +1226,37 @@ function showScreen(name) {
 }
 
 function zoomToChamber() {
-  const l1 = document.getElementById('screen-l1');
-  const ch = document.getElementById('screen-chamber');
-  const l1Stage = l1.querySelector('.stage');
-  const chStage = ch.querySelector('.stage');
-
-  l1Stage.style.transition = 'transform 700ms cubic-bezier(.2,.7,.2,1), opacity 500ms ease';
-  l1Stage.style.transform = 'scale(2.4)';
-  l1Stage.style.opacity = '0';
-
-  setTimeout(() => {
+  // Scroll-fly mode: click already set up scrollFly, just give a bigger nudge
+  const anchorTgt = clickTargets.find(t => t.type === 'anchor' && t.id === state.chamberAnchor);
+  if (!anchorTgt) {
+    const ch = document.getElementById('screen-chamber');
     ch.classList.add('active');
-  }, 300);
-
-  setTimeout(() => {
-    l1.classList.remove('active');
-    l1Stage.style.transition = 'none';
-    l1Stage.style.transform = '';
-    l1Stage.style.opacity = '';
-  }, 750);
+    document.getElementById('screen-l1').classList.remove('active');
+    state.screen = 'chamber';
+    return;
+  }
+  enterScrollFly(anchorTgt);
 }
 
 function zoomFromChamber() {
   const l1 = document.getElementById('screen-l1');
-  const ch = document.getElementById('screen-chamber');
-  const chStage = ch.querySelector('.stage');
-  const chBar = ch.querySelector('.chamber-bar');
-  const chZone = ch.querySelector('.chat-zone');
-  const chFooter = ch.querySelector('.footer');
-  const chCaption = ch.querySelector('.chamber-anchor-caption');
 
+  // Re-enter scroll-fly mode in reverse
   l1.classList.add('active');
-  ch.style.transition = 'opacity 400ms ease';
+  startThreeAnim(); // ensure Three.js is running for the fly-back
 
-  setTimeout(() => {
-    ch.style.opacity = '0';
-  }, 30);
-
-  setTimeout(() => {
-    ch.classList.remove('active');
-    ch.style.transition = '';
-    ch.style.opacity = '';
-  }, 500);
+  // If scrollFly has position data, reuse it; otherwise set from current camera
+  if (!scrollFly.startPos) {
+    scrollFly.startPos = new THREE.Vector3(0, 0, CAM_Z);
+    scrollFly.endPos = threeCamera.position.clone();
+  }
+  scrollFly.frozenRotation = scrollFly.frozenRotation ?? constGroup.rotation.z;
+  scrollFly.lookTarget = scrollFly.lookTarget ?? null;
+  scrollFly.active = true;
+  scrollFly.progress = 1;
+  scrollFly.target = 0;
+  scrollFly.chamberShown = true;
+  scrollFly.autoReturn = true;
 }
 
 function openPanel(type, id) {
@@ -1631,32 +1362,13 @@ function handleSearch(query) {
   const hint = document.getElementById('l1-zoom-hint');
 
   if (!q) {
-    document.querySelectorAll('.node').forEach(el => el.style.opacity = '');
-    document.querySelectorAll('.signal').forEach(el => el.style.opacity = '');
-    document.querySelectorAll('.gap-group').forEach(el => el.style.opacity = '');
+    threeHandleSearch('');
     pin.classList.remove('visible');
     hint.textContent = 'scroll to zoom · see grouped memories';
     return;
   }
 
-  let matchCount = 0;
-  document.querySelectorAll('.node').forEach(el => {
-    const id = el.dataset.id;
-    const n = NODES.find(nd => nd.id === id);
-    const text = (n && n.label || '').toLowerCase();
-    if (text.includes(q)) { el.style.opacity = '1'; matchCount++; }
-    else el.style.opacity = '0.15';
-  });
-
-  document.querySelectorAll('.signal').forEach(el => el.style.opacity = '0.15');
-
-  RIM.forEach(v => {
-    const gapEl = document.querySelector(`[data-gap="${v.name}"]`);
-    if (gapEl) {
-      if (v.name.toLowerCase().includes(q)) { gapEl.style.opacity = '1'; matchCount++; }
-      else gapEl.style.opacity = '0.15';
-    }
-  });
+  const matchCount = threeHandleSearch(q);
 
   if (q === 'care') {
     pin.classList.add('visible');
@@ -1667,58 +1379,1221 @@ function handleSearch(query) {
 }
 
 // ════════════════════════════════════════════════════
+//  THREE.JS — L1 constellation scene
+// ════════════════════════════════════════════════════
+
+let threeScene, threeCamera, threeRenderer, threeCssRenderer;
+let constGroup;            // rotating constellation group
+let starsMat, signalsMat;  // shader materials (time uniform)
+let galaxyMat = null;      // galaxy background shader
+let nebulaMat = null;      // nebula star shader
+let nebulaMesh = null;     // nebula plane mesh (for resize)
+let clickTargets = [];     // [{mesh, type, id, sprites:[], labelDiv}]
+let threeRAF = null;
+let threeT0 = 0;
+
+function makeGlowTex(size, stops) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  stops.forEach(s => g.addColorStop(s[0], s[1]));
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(c);
+}
+
+function hexRGB(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+const NODE_PALETTES = {
+  amber:{c:'#fde4be',m:'#f4b266',bloom:'#f4b266'},
+  copper:{c:'#fcd2b0',m:'#e08850',bloom:'#e08850'},
+  gold:{c:'#fef0c8',m:'#e8c878',bloom:'#e8c878'},
+  rose:{c:'#fde0d2',m:'#e8a890',bloom:'#e8a890'},
+  cream:{c:'#fbf2d6',m:'#e6d4a8'},
+  warmCream:{c:'#fbe8c0',m:'#e8d4a0'},
+  blue:{c:'#edf2fa',m:'#b8c8e0'},
+  paleRose:{c:'#fae0d8',m:'#e0c0b8'},
+  cyan:{c:'#e4f0f0',m:'#b0d0d8'},
+};
+
+function makeNodeTex(cHex, mHex) {
+  const [cr,cg,cb] = hexRGB(cHex), [mr,mg,mb] = hexRGB(mHex);
+  return makeGlowTex(128, [
+    [0,`rgba(${cr},${cg},${cb},1)`],[0.22,`rgba(${mr},${mg},${mb},0.95)`],
+    [0.55,`rgba(${mr},${mg},${mb},0.45)`],[1,`rgba(${mr},${mg},${mb},0)`],
+  ]);
+}
+
+function makeBloomTex(hex) {
+  const [r,g,b] = hexRGB(hex);
+  return makeGlowTex(128, [
+    [0,`rgba(${r},${g},${b},0.28)`],[0.25,`rgba(${r},${g},${b},0.11)`],
+    [0.55,`rgba(${r},${g},${b},0.035)`],[1,`rgba(${r},${g},${b},0)`],
+  ]);
+}
+
+/* ── scene bootstrap ── */
+const SVG_W = 1440, SVG_H = 900, SVG_AR = SVG_W / SVG_H;
+const CAM_FOV = 45, CAM_Z = 1100;
+const CAM_HALF_TAN = Math.tan((CAM_FOV / 2) * Math.PI / 180); // ~0.4142
+
+/* ── scroll-driven fly ── */
+const scrollFly = {
+  active: false,
+  progress: 0,        // current smoothed value 0→1
+  target: 0,          // where scroll wants us (0→1)
+  startPos: null,     // THREE.Vector3 — camera home
+  endPos: null,       // THREE.Vector3 — close to anchor
+  chamberShown: false,
+  autoReturn: false,   // true when flying back via button/ESC
+};
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3) / 2;
+}
+
+function enterScrollFly(anchorTgt) {
+  const wp = anchorTgt.worldPos.clone();
+  constGroup.updateMatrixWorld(true);
+  const worldTarget = wp.clone().applyMatrix4(constGroup.matrixWorld);
+  const flyEnd = new THREE.Vector3(worldTarget.x, worldTarget.y, worldTarget.z + 180);
+
+  scrollFly.active = true;
+  scrollFly.progress = 0;
+  scrollFly.target = 0.08; // small initial nudge so user sees it respond
+  scrollFly.startPos = new THREE.Vector3(
+    threeCamera.position.x, threeCamera.position.y, threeCamera.position.z);
+  scrollFly.endPos = flyEnd;
+  scrollFly.lookTarget = new THREE.Vector3(worldTarget.x, worldTarget.y, worldTarget.z);
+  scrollFly.frozenRotation = constGroup.rotation.z; // freeze constellation rotation during fly
+  scrollFly.chamberShown = false;
+  scrollFly.autoReturn = false;
+
+  // Disable orbit controls during fly
+  if (orbitControls) orbitControls.enabled = false;
+
+  // Build 3D chamber around the anchor
+  buildChamberScene(state.chamberAnchor);
+}
+
+function cancelScrollFly() {
+  scrollFly.active = false;
+  scrollFly.progress = 0;
+  scrollFly.target = 0;
+  scrollFly.chamberShown = false;
+  scrollFly.autoReturn = false;
+  threeCamera.position.set(0, 0, CAM_Z);
+  threeCamera.lookAt(0, 0, 0); // reset camera orientation
+  // Re-enable orbit controls and reset to home position
+  if (orbitControls) {
+    orbitControls.target.set(0, 0, 0);
+    orbitControls.enabled = true;
+    orbitControls.update();
+  }
+  state.screen = 'l1';
+  destroyChamberScene();
+  // Restore L1 UI
+  const l1 = document.getElementById('screen-l1');
+  const toolbar = l1.querySelector('.toolbar');
+  const chatZone = l1.querySelector('.chat-zone');
+  const footer = l1.querySelector('.footer');
+  if (toolbar) toolbar.style.opacity = '';
+  if (chatZone) chatZone.style.opacity = '';
+  if (footer) footer.style.opacity = '';
+  // Clean up chamber overlay
+  const ch = document.getElementById('screen-chamber');
+  ch.classList.remove('active');
+  ch.style.opacity = '';
+}
+
+function updateScrollFly() {
+  if (!scrollFly.active) return;
+
+  const damping = scrollFly.autoReturn ? 0.12 : 0.08;
+  scrollFly.progress += (scrollFly.target - scrollFly.progress) * damping;
+  if (Math.abs(scrollFly.target - scrollFly.progress) < 0.003) scrollFly.progress = scrollFly.target;
+
+  const ep = easeInOutCubic(Math.max(0, Math.min(1, scrollFly.progress)));
+  threeCamera.position.lerpVectors(scrollFly.startPos, scrollFly.endPos, ep);
+
+  const l1 = document.getElementById('screen-l1');
+  const ch = document.getElementById('screen-chamber');
+  const ctr = document.getElementById('three-container');
+
+  // Fade L1 UI elements early so they don't overlap chamber
+  const uiFade = Math.max(0, Math.min(1, scrollFly.progress / 0.35));
+  const toolbar = l1.querySelector('.toolbar');
+  const chatZone = l1.querySelector('.chat-zone');
+  const footer = l1.querySelector('.footer');
+  if (toolbar) toolbar.style.opacity = String(1 - uiFade);
+  if (chatZone) chatZone.style.opacity = String(1 - uiFade);
+  if (footer) footer.style.opacity = String(1 - uiFade);
+
+  // Reveal 3D chamber memories as camera approaches (0.3 → 0.7)
+  const chamberReveal = Math.max(0, Math.min(1, (scrollFly.progress - 0.30) / 0.40));
+  setChamberOpacity(chamberReveal);
+
+  // Show chamber HTML overlay (bar, chat) at 0.7+
+  const overlayFade = Math.max(0, Math.min(1, (scrollFly.progress - 0.70) / 0.20));
+  if (overlayFade > 0.01 && !scrollFly.chamberShown) {
+    scrollFly.chamberShown = true;
+    ch.classList.add('active');
+    ch.style.opacity = '0';
+  }
+  if (scrollFly.chamberShown) {
+    ch.style.opacity = String(overlayFade);
+  }
+
+  // Fully arrived
+  if (scrollFly.progress >= 0.98 && scrollFly.target >= 1) {
+    state.screen = 'chamber';
+    // Keep scrollFly active so we can scroll back
+    scrollFly.active = false;
+  }
+
+  // Scrolled all the way back — cancel
+  if (scrollFly.progress <= 0.005 && scrollFly.target <= 0) {
+    if (scrollFly.chamberShown) {
+      ch.classList.remove('active');
+      ch.style.opacity = '';
+    }
+    ctr.style.opacity = '';
+    destroyChamberScene();
+    cancelScrollFly();
+  }
+}
+
+function initThreeScene() {
+  const ctr = document.getElementById('three-container');
+  if (!ctr) return;
+
+  threeScene = new THREE.Scene();
+
+  const W = window.innerWidth, H = window.innerHeight;
+
+  threeCamera = new THREE.PerspectiveCamera(CAM_FOV, W / H, 0.1, 5000);
+  threeCamera.position.set(0, 0, CAM_Z);
+
+  threeRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+  threeRenderer.setSize(W, H);
+  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  threeRenderer.setClearColor(0x060912, 1);
+  ctr.appendChild(threeRenderer.domElement);
+
+  threeCssRenderer = new CSS2DRenderer();
+  threeCssRenderer.setSize(W, H);
+  Object.assign(threeCssRenderer.domElement.style, { position:'absolute', top:'0', left:'0', pointerEvents:'none' });
+  ctr.appendChild(threeCssRenderer.domElement);
+
+  constGroup = new THREE.Group();
+  constGroup.position.set(0, 80, 0); // SVG translate(0,-80) negated
+  threeScene.add(constGroup);
+
+  _buildGalaxyBg();
+  _buildCoreGlow();
+  _buildStars();
+  _buildWisps();
+  _buildVoidCore();
+  _buildSignals();
+  _buildNodes();
+  _buildNebulaStar();
+
+  /* ── screen-space hit test ── */
+  const _v3 = new THREE.Vector3();
+
+  function projectToScreen(localPos) {
+    // Transform local position through the constellation group to get world pos
+    _v3.copy(localPos);
+    constGroup.updateMatrix();
+    constGroup.updateMatrixWorld(true);
+    _v3.applyMatrix4(constGroup.matrixWorld);
+    _v3.project(threeCamera);
+    return {
+      x: (_v3.x + 1) / 2 * window.innerWidth,
+      y: (-_v3.y + 1) / 2 * window.innerHeight,
+    };
+  }
+
+  function projectMeshToScreen(mesh) {
+    // Get the mesh's actual world position (accounts for group transforms/rotation)
+    _v3.setFromMatrixPosition(mesh.matrixWorld);
+    _v3.project(threeCamera);
+    return {
+      x: (_v3.x + 1) / 2 * window.innerWidth,
+      y: (-_v3.y + 1) / 2 * window.innerHeight,
+    };
+  }
+
+  function hitTest(clientX, clientY) {
+    let best = null, bestDist = Infinity;
+    // Check chamber targets first (when in chamber mode)
+    const allTargets = chamberTargets.length ? chamberTargets.concat(clickTargets) : clickTargets;
+    for (const tgt of allTargets) {
+      // Use live mesh position for accurate hit testing (handles rotation)
+      const sp = tgt.mesh ? projectMeshToScreen(tgt.mesh) : projectToScreen(tgt.worldPos);
+      const dx = clientX - sp.x, dy = clientY - sp.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const hitR = tgt.type === 'core' ? 60 : tgt.type === 'anchor' ? 40 : tgt.type === 'memory' ? 35 : tgt.type === 'gap' ? 30 : 24;
+      if (dist < hitR && dist < bestDist) { best = tgt; bestDist = dist; }
+    }
+    return best;
+  }
+
+  ctr.addEventListener('click', e => {
+    if (state.panelOpen) return;
+    const tgt = hitTest(e.clientX, e.clientY);
+    if (!tgt) return;
+    if (tgt.type === 'memory') { openPanel('memory', tgt.id); }
+    else if (tgt.type === 'anchor') { state.chamberAnchor = tgt.id; rebuildChamber(tgt.id); showScreen('chamber'); }
+    else if (tgt.type === 'open') { showScreen('draft'); }
+    else if (tgt.type === 'known') { openPanel('known', tgt.id); }
+    else if (tgt.type === 'gap') { openPanel('gap', tgt.id); }
+    else if (tgt.type === 'core') { document.getElementById('profile-content').innerHTML = buildProfileContent(); showScreen('profile'); }
+  });
+
+  /* ── orbit controls (drag to rotate) ── */
+  orbitControls = new OrbitControls(threeCamera, ctr);
+  orbitControls.enableDamping = true;
+  orbitControls.dampingFactor = 0.04;
+  orbitControls.rotateSpeed = 0.35;
+  orbitControls.enableZoom = false;   // scroll is used for fly-in
+  orbitControls.enablePan = false;
+  orbitControls.target.set(0, 0, 0);
+
+  // Suppress node clicks after an orbit drag
+  let orbitDragged = false;
+  orbitControls.addEventListener('start', () => { orbitDragged = false; });
+  orbitControls.addEventListener('change', () => { orbitDragged = true; });
+  ctr.addEventListener('click', e => {
+    if (orbitDragged) { e.stopImmediatePropagation(); orbitDragged = false; }
+  }, true); // capture phase, before the existing click handler
+
+  /* ── hover ── */
+  let hoveredDiv = null;
+  ctr.addEventListener('pointermove', e => {
+    if (hoveredDiv) { hoveredDiv.style.opacity = '0'; hoveredDiv = null; }
+    const tgt = hitTest(e.clientX, e.clientY);
+    if (tgt) {
+      if (tgt.labelDiv && tgt.type === 'known') { tgt.labelDiv.style.opacity = '0.88'; hoveredDiv = tgt.labelDiv; }
+      ctr.style.cursor = 'pointer';
+    } else {
+      ctr.style.cursor = '';
+    }
+  });
+
+  /* ── resize ── */
+  window.addEventListener('resize', () => {
+    const w = window.innerWidth, h = window.innerHeight;
+    threeCamera.aspect = w / h;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(w, h);
+    threeCssRenderer.setSize(w, h);
+    // Perspective point-size scale: pixels per world unit at reference distance
+    const pH = threeRenderer.getSize(new THREE.Vector2()).y * threeRenderer.getPixelRatio();
+    const visH = 2 * CAM_Z * CAM_HALF_TAN;
+    const sc = pH / visH;
+    if (starsMat) starsMat.uniforms.uScale.value = sc;
+    if (signalsMat) signalsMat.uniforms.uScale.value = sc;
+    // Update galaxy resolution uniform
+    if (galaxyMat) {
+      const dpr = threeRenderer.getPixelRatio();
+      galaxyMat.uniforms.iResolution.value.set(w * dpr, h * dpr);
+    }
+    // Update nebula mesh size to stay at 150 CSS px
+    if (nebulaMesh) {
+      const nebDist = CAM_Z - 50; // nebula at z=50
+      const nebVisH = 2 * nebDist * CAM_HALF_TAN;
+      const nebulaWorldSize = 150 * nebVisH / h;
+      nebulaMesh.scale.set(nebulaWorldSize, nebulaWorldSize, 1);
+    }
+  });
+
+  threeT0 = performance.now();
+}
+
+/* ── galaxy background — domain-warped nebula (was separate WebGL canvas) ── */
+function _buildGalaxyBg() {
+  const dpr = threeRenderer.getPixelRatio();
+  const W = window.innerWidth, H = window.innerHeight;
+  galaxyMat = new THREE.ShaderMaterial({
+    uniforms: {
+      iResolution: { value: new THREE.Vector2(W * dpr, H * dpr) },
+      iTime: { value: 0 },
+    },
+    vertexShader: `void main(){gl_Position=vec4(position.xy,0.999,1.0);}`,
+    fragmentShader: `
+precision highp float;
+uniform vec2 iResolution;
+uniform float iTime;
+
+float hash2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+
+float noise(vec2 p){
+  vec2 i=floor(p),f=fract(p);
+  f=f*f*(3.0-2.0*f);
+  float a=hash2(i),b=hash2(i+vec2(1,0)),c=hash2(i+vec2(0,1)),d=hash2(i+vec2(1,1));
+  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+}
+
+float fbm(vec2 p){
+  float f=0.0,amp=0.5;
+  mat2 m=mat2(1.6,1.2,-1.2,1.6);
+  for(int i=0;i<5;i++){f+=amp*noise(p);p=m*p;amp*=0.5;}
+  return f;
+}
+
+float warpedFbm(vec2 p,float t){
+  vec2 q=vec2(fbm(p+vec2(0,0)+t*0.012),fbm(p+vec2(5.2,1.3)-t*0.008));
+  vec2 r=vec2(fbm(p+4.0*q+vec2(1.7,9.2)+t*0.006),fbm(p+4.0*q+vec2(8.3,2.8)-t*0.010));
+  return fbm(p+4.0*r);
+}
+
+void main(){
+  vec2 uv=gl_FragCoord.xy/iResolution.xy;
+  vec2 p=(gl_FragCoord.xy-0.5*iResolution.xy)/min(iResolution.x,iResolution.y);
+  p*=2.8;
+  float t=iTime;
+  float f=warpedFbm(p,t);
+  float f2=warpedFbm(p*0.6+vec2(10.0),t*0.7);
+  float combined=mix(f,f2,0.4);
+
+  vec3 col1=vec3(0.18,0.08,0.02);
+  vec3 col2=vec3(0.60,0.28,0.08);
+  vec3 col3=vec3(0.95,0.70,0.35);
+  vec3 col4=vec3(0.35,0.22,0.45);
+
+  vec3 color=mix(col1,col2,smoothstep(0.0,0.45,combined));
+  color=mix(color,col3,smoothstep(0.45,0.75,combined));
+  color=mix(color,col4,smoothstep(0.3,0.5,combined)*(1.0-smoothstep(0.5,0.7,combined))*0.25);
+
+  float dist=length((uv-0.5)*vec2(iResolution.x/iResolution.y,1.0));
+  float vignette=1.0-smoothstep(0.1,0.48,dist);
+  float contrast=smoothstep(0.35,0.65,combined);
+  float brightness=0.055;
+  color*=brightness*vignette*contrast;
+
+  float centerFade=smoothstep(0.0,0.22,dist);
+  color*=mix(0.1,1.0,centerFade);
+
+  // Blend onto scene background color
+  vec3 bgColor=vec3(0.024,0.035,0.071); // #060912
+  gl_FragColor=vec4(bgColor+color,1.0);
+}`,
+    depthWrite: false,
+    depthTest: false,
+    blending: THREE.NormalBlending,
+  });
+
+  const geo = new THREE.PlaneGeometry(2, 2);
+  const mesh = new THREE.Mesh(geo, galaxyMat);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = -100;
+  threeScene.add(mesh);
+}
+
+/* ── nebula star — volumetric nebula at core (was separate WebGL canvas) ── */
+function _buildNebulaStar() {
+  // Generate 256×256 noise texture (matches Shadertoy iChannel0)
+  const sz = 256;
+  const noiseData = new Uint8Array(sz * sz * 4);
+  for (let i = 0; i < sz * sz; i++) {
+    noiseData[i*4]   = Math.random() * 255 | 0;
+    noiseData[i*4+1] = Math.random() * 255 | 0;
+    noiseData[i*4+2] = Math.random() * 255 | 0;
+    noiseData[i*4+3] = 255;
+  }
+  const noiseTex = new THREE.DataTexture(noiseData, sz, sz, THREE.RGBAFormat);
+  noiseTex.wrapS = noiseTex.wrapT = THREE.RepeatWrapping;
+  noiseTex.magFilter = THREE.LinearFilter;
+  noiseTex.minFilter = THREE.LinearFilter;
+  noiseTex.needsUpdate = true;
+
+  nebulaMat = new THREE.ShaderMaterial({
+    uniforms: {
+      iResolution: { value: new THREE.Vector2(150, 150) },
+      iTime: { value: 0 },
+      iChannel0: { value: noiseTex },
+    },
+    vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader: `
+precision highp float;
+uniform vec2 iResolution;
+uniform float iTime;
+uniform sampler2D iChannel0;
+varying vec2 vUv;
+
+#define ROTATION
+#define DITHERING
+#define BACKGROUND
+
+#define pi 3.14159265
+#define R(p,a) p=cos(a)*p+sin(a)*vec2(p.y,-p.x)
+
+float noise(in vec3 x){
+  vec3 p=floor(x),f=fract(x);
+  f=f*f*(3.0-2.0*f);
+  vec2 uv2=(p.xy+vec2(37.0,17.0)*p.z)+f.xy;
+  vec2 rg=texture2D(iChannel0,(uv2+0.5)/256.0).yx;
+  return 1.0-0.82*mix(rg.x,rg.y,f.z);
+}
+
+float rand(vec2 co){return fract(sin(dot(co*0.123,vec2(12.9898,78.233)))*43758.5453);}
+
+const float nudge=0.739513;
+float normalizer=1.0/sqrt(1.0+nudge*nudge);
+
+float SpiralNoiseC(vec3 p){
+  float n=0.0;float iter=1.0;
+  for(int i=0;i<8;i++){
+    n+=-abs(sin(p.y*iter)+cos(p.x*iter))/iter;
+    p.xy+=vec2(p.y,-p.x)*nudge;p.xy*=normalizer;
+    p.xz+=vec2(p.z,-p.x)*nudge;p.xz*=normalizer;
+    iter*=1.733733;
+  }
+  return n;
+}
+float SpiralNoise3D(vec3 p){
+  float n=0.0;float iter=1.0;
+  for(int i=0;i<5;i++){
+    n+=(sin(p.y*iter)+cos(p.x*iter))/iter;
+    p.xz+=vec2(p.z,-p.x)*nudge;p.xz*=normalizer;
+    iter*=1.33733;
+  }
+  return n;
+}
+float NebulaNoise(vec3 p){
+  float f=p.y+4.5;
+  f-=SpiralNoiseC(p.xyz);
+  f+=SpiralNoiseC(p.zxy*0.5123+100.0)*4.0;
+  f-=SpiralNoise3D(p);
+  return f;
+}
+float map(vec3 p){
+  #ifdef ROTATION
+  R(p.xz,iTime*0.1);
+  #endif
+  return abs(NebulaNoise(p/0.5)*0.5)+0.03;
+}
+
+vec3 computeColor(float density,float radius){
+  vec3 result=mix(vec3(1.0,0.9,0.8),vec3(0.4,0.15,0.1),density);
+  result*=mix(7.0*vec3(0.8,1.0,1.0),1.5*vec3(0.48,0.53,0.5),min((radius+0.05)/0.9,1.15));
+  return result;
+}
+
+bool RaySphereIntersect(vec3 org,vec3 dir,out float near,out float far){
+  float b=dot(dir,org),c=dot(org,org)-8.0,delta=b*b-c;
+  if(delta<0.0)return false;
+  float sq=sqrt(delta);
+  near=-b-sq;far=-b+sq;
+  return far>0.0;
+}
+
+void main(){
+  // Use vUv instead of gl_FragCoord for mesh-local rendering
+  vec2 fragCoord=vUv*iResolution;
+  vec3 rd=normalize(vec3((fragCoord-0.5*iResolution)/iResolution.y,1.0));
+  vec3 ro=vec3(0.0,0.0,-6.0);
+
+  R(rd.yz,-pi*3.93);R(rd.xz,pi*3.2);
+  R(ro.yz,-pi*3.93);R(ro.xz,pi*3.2);
+
+  #ifdef DITHERING
+  vec2 seed=vUv+fract(iTime);
+  #endif
+
+  float ld=0.,td=0.,w=0.,d=1.,t=0.;
+  const float h=0.1;
+  vec4 sum=vec4(0.0);
+  float mn=0.,mx=0.;
+
+  if(RaySphereIntersect(ro,rd,mn,mx)){
+    t=mn*step(t,mn);
+    for(int i=0;i<56;i++){
+      vec3 pos=ro+t*rd;
+      if(td>.9||d<.1*t||t>10.||sum.a>.99||t>mx)break;
+      float d=map(pos);
+      d=max(d,0.08);
+      vec3 ldst=-pos;
+      float lD=max(length(ldst),0.001);
+      sum.rgb+=vec3(1.0,0.5,0.25)/(lD*lD)/30.0;
+      if(d<h){
+        ld=h-d;
+        w=(1.0-td)*ld;
+        td+=w+1.0/200.0;
+        vec4 col=vec4(computeColor(td,lD),td);
+        col.a*=0.185;col.rgb*=col.a;
+        sum+=col*(1.0-sum.a);
+      }
+      td+=1.0/70.0;
+      d=max(d,0.04);
+      #ifdef DITHERING
+      d=abs(d)*(0.8+0.2*rand(seed*vec2(float(i))));
+      #endif
+      t+=max(d*0.1*max(min(length(ldst),length(ro)),1.0),0.02);
+    }
+    sum*=1.0/exp(ld*0.2)*0.6;
+    sum=clamp(sum,0.0,1.0);
+    sum.xyz=sum.xyz*sum.xyz*(3.0-2.0*sum.xyz);
+  }
+
+  #ifdef BACKGROUND
+  if(td<0.8){
+    vec3 stars=vec3(noise(rd*500.0)*0.5+0.5);
+    vec3 starbg=mix(vec3(0),vec3(0.8,0.9,1.0),smoothstep(0.99,1.0,stars)*clamp(dot(vec3(0),rd)+0.75,0.,1.));
+    sum.xyz+=clamp(starbg,0.0,1.0);
+  }
+  #endif
+
+  // Apply opacity 0.35 matching original CSS opacity
+  gl_FragColor=vec4(sum.xyz*0.35,1.0);
+}`,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  // Size: 150 CSS px → world units (perspective)
+  const nebDist = CAM_Z - 50; // nebula sits at z=50
+  const nebVisH = 2 * nebDist * CAM_HALF_TAN;
+  const nebulaWorldSize = 150 * nebVisH / window.innerHeight;
+
+  const geo = new THREE.PlaneGeometry(1, 1);
+  nebulaMesh = new THREE.Mesh(geo, nebulaMat);
+  nebulaMesh.scale.set(nebulaWorldSize, nebulaWorldSize, 1);
+  nebulaMesh.position.set(0, 80, 50); // core world position, in front of constellation
+  nebulaMesh.renderOrder = 100;
+  nebulaMesh.frustumCulled = false;
+  threeScene.add(nebulaMesh);
+}
+
+/* ── background glow ── */
+function _buildCoreGlow() {
+  const tex = makeGlowTex(256, [
+    [0,'rgba(201,142,62,0.32)'],[0.2,'rgba(201,142,62,0.22)'],
+    [0.4,'rgba(201,142,62,0.13)'],[0.6,'rgba(201,142,62,0.06)'],
+    [0.8,'rgba(201,142,62,0.02)'],[1,'rgba(201,142,62,0)'],
+  ]);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthWrite:false }));
+  s.scale.set(1080, 1080, 1);
+  s.position.z = -5;
+  threeScene.add(s);
+}
+
+/* ── starfield ── */
+function _buildStars() {
+  const count = 460, sw = 2400, sh = 1400;
+  const rng = makeRng(1);
+  const pos=[], sz=[], col=[], ops=[], twP=[], twS=[];
+
+  for (let i = 0; i < count; i++) {
+    const x = (rng()-0.5)*sw, y = (rng()-0.5)*sh;
+    if (Math.hypot(x,y) < 110) continue;
+    const bright = rng() < 0.06;
+    const r = bright ? 1.3+rng()*0.9 : 0.55+rng()*0.75;
+    const op = 0.32+rng()*0.62;
+    const cr = rng(), tr = rng();
+    pos.push(x, -y, (rng()-0.5)*240);
+    sz.push(r);
+    let cR=0.96, cG=0.91, cB=0.83;
+    if (cr < 0.10) { cR=0.77; cG=0.82; cB=0.91; }
+    else if (cr < 0.25) { cR=0.94; cG=0.78; cB=0.60; }
+    col.push(cR, cG, cB);
+    ops.push(op);
+    twP.push(rng()*6.283);
+    if (tr < 0.025) twS.push(6.283/3.4);
+    else if (tr < 0.05) twS.push(6.283/4.1);
+    else if (tr < 0.075) twS.push(6.283/5.2);
+    else if (tr < 0.10) twS.push(6.283/3.8);
+    else twS.push(0);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('aSize',    new THREE.Float32BufferAttribute(sz,1));
+  geo.setAttribute('aColor',   new THREE.Float32BufferAttribute(col,3));
+  geo.setAttribute('aOpacity', new THREE.Float32BufferAttribute(ops,1));
+  geo.setAttribute('aTwPhase', new THREE.Float32BufferAttribute(twP,1));
+  geo.setAttribute('aTwSpeed', new THREE.Float32BufferAttribute(twS,1));
+
+  const pH = threeRenderer.getSize(new THREE.Vector2()).y * threeRenderer.getPixelRatio();
+  const visH = 2 * CAM_Z * CAM_HALF_TAN;
+  const sc = pH / visH;
+
+  starsMat = new THREE.ShaderMaterial({
+    uniforms: { uTime:{value:0}, uScale:{value:sc} },
+    vertexShader: `
+      attribute float aSize;
+      attribute vec3 aColor;
+      attribute float aOpacity;
+      attribute float aTwPhase;
+      attribute float aTwSpeed;
+      uniform float uTime;
+      uniform float uScale;
+      varying vec3 vCol;
+      varying float vA;
+      void main(){
+        vCol = aColor;
+        float tw = aTwSpeed > 0.0 ? mix(0.25,1.0,0.5+0.5*sin(uTime*aTwSpeed+aTwPhase)) : 1.0;
+        vA = aOpacity * tw;
+        vec4 mvPos = modelViewMatrix * vec4(position,1.0);
+        gl_Position = projectionMatrix * mvPos;
+        float dist = -mvPos.z;
+        gl_PointSize = clamp(aSize * uScale * 2.5 * (${CAM_Z.toFixed(1)} / dist), 1.0, 64.0);
+      }`,
+    fragmentShader: `
+      varying vec3 vCol;
+      varying float vA;
+      void main(){
+        float d = length(gl_PointCoord - 0.5)*2.0;
+        if(d > 1.0) discard;
+        float a = smoothstep(1.0,0.2,d);
+        gl_FragColor = vec4(vCol, vA*a);
+      }`,
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  });
+
+  const starPoints = new THREE.Points(geo, starsMat);
+  starPoints.frustumCulled = false;   // prevent clipping at orbit edges
+  constGroup.add(starPoints);
+}
+
+/* ── wisps ── */
+function _buildWisps() {
+  const defs = [
+    { cx:-280, cy:-200, rx:380, ry:240, c:[244,178,102], op:0.6, z:-30 },
+    { cx:280,  cy:220,  rx:340, ry:220, c:[118,130,200], op:0.5, z:20 },
+    { cx:-100, cy:260,  rx:300, ry:180, c:[180,120,80],  op:0.55, z:-15 },
+  ];
+  defs.forEach(w => {
+    const [r,g,b] = w.c;
+    const tex = makeGlowTex(256, [
+      [0,`rgba(${r},${g},${b},0.30)`],[0.25,`rgba(${r},${g},${b},0.18)`],
+      [0.5,`rgba(${r},${g},${b},0.08)`],[0.75,`rgba(${r},${g},${b},0.02)`],
+      [1,`rgba(${r},${g},${b},0)`],
+    ]);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, opacity:w.op, depthWrite:false }));
+    sp.scale.set(w.rx*2, w.ry*2, 1);
+    sp.position.set(w.cx, -w.cy, w.z);
+    constGroup.add(sp);
+  });
+}
+
+/* ── void core ── */
+function _buildVoidCore() {
+  // Outer well r=260
+  const oTex = makeGlowTex(256, [
+    [0,'rgba(4,6,14,0.88)'],[0.3,'rgba(5,7,16,0.72)'],
+    [0.55,'rgba(6,9,18,0.50)'],[0.78,'rgba(6,9,18,0.20)'],
+    [1,'rgba(6,9,18,0)'],
+  ]);
+  const oSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:oTex, transparent:true, depthWrite:false }));
+  oSp.scale.set(520,520,1); oSp.position.z = -8;
+  constGroup.add(oSp);
+
+  // Inner well r=160
+  const iTex = makeGlowTex(256, [
+    [0,'rgba(2,3,8,0.96)'],[0.4,'rgba(2,3,8,0.78)'],
+    [0.7,'rgba(2,3,8,0.45)'],[0.9,'rgba(2,3,8,0.15)'],
+    [1,'rgba(2,3,8,0)'],
+  ]);
+  const iSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:iTex, transparent:true, depthWrite:false }));
+  iSp.scale.set(320,320,1); iSp.position.z = -5;
+  constGroup.add(iSp);
+
+  // Interior home r=62
+  const hTex = makeGlowTex(128, [
+    [0,'rgba(82,50,22,0.20)'],[0.5,'rgba(40,26,12,0.18)'],
+    [1,'rgba(2,3,8,0)'],
+  ]);
+  const hSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:hTex, transparent:true, depthWrite:false }));
+  hSp.scale.set(124,124,1); hSp.position.z = -2;
+  constGroup.add(hSp);
+
+  // Core spark
+  const sTex = makeGlowTex(64, [
+    [0,'rgba(255,244,216,1)'],[0.3,'rgba(255,244,216,0.6)'],
+    [1,'rgba(255,244,216,0)'],
+  ]);
+  const sSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:sTex, transparent:true, depthWrite:false }));
+  sSp.scale.set(8,8,1); sSp.position.z = 25;
+  constGroup.add(sSp);
+
+  // Clickable core hit zone
+  const cGeo = new THREE.CircleGeometry(90, 32);
+  const cMat = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false });
+  const cMesh = new THREE.Mesh(cGeo, cMat);
+  cMesh.position.z = 1;
+  constGroup.add(cMesh);
+  clickTargets.push({ mesh:cMesh, type:'core', id:'eva', worldPos:new THREE.Vector3(0, 0, 1) });
+
+  // Rim arcs and gap labels
+  RIM.forEach(v => {
+    if (v.kind === 'gap') {
+      const rimR = 64, lp = polar(v.center, rimR + 22);
+      const div = document.createElement('div');
+      div.style.cssText = 'font-family:var(--serif);font-style:italic;font-weight:400;font-size:11.5px;color:rgba(244,178,102,0.78);letter-spacing:.04em;cursor:pointer;pointer-events:auto;white-space:nowrap';
+      div.innerHTML = `<span style="font-weight:500;color:rgba(244,178,102,0.95)">${v.name}</span>`;
+      const lbl = new CSS2DObject(div);
+      lbl.position.set(lp.x, -lp.y, 2);
+      constGroup.add(lbl);
+      div.addEventListener('click', e => { e.stopPropagation(); if (!state.panelOpen) openPanel('gap', v.name); });
+      const gGeo = new THREE.CircleGeometry(20, 16);
+      const gMat = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false });
+      const gMesh = new THREE.Mesh(gGeo, gMat);
+      gMesh.position.set(lp.x, -lp.y, 1);
+      constGroup.add(gMesh);
+      clickTargets.push({ mesh:gMesh, type:'gap', id:v.name, worldPos:new THREE.Vector3(lp.x, -lp.y, 1) });
+    } else {
+      // Bright or dim arc
+      const rimR = 64, span = 60;
+      const start = v.center - span/2, end = v.center + span/2;
+      const isBright = v.kind === 'bright';
+      const pts = [];
+      for (let a = start; a <= end; a += 2) {
+        const pp = polar(a, rimR);
+        pts.push(new THREE.Vector3(pp.x, -pp.y, 3));
+      }
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0xf4b266, transparent:true,
+        opacity: isBright ? 0.85 : 0.42,
+      });
+      constGroup.add(new THREE.Line(lineGeo, lineMat));
+    }
+  });
+}
+
+/* ── signals ── */
+function _buildSignals() {
+  if (!SIGNALS.length) return;
+  const pos=[], ops=[], twP=[], twS=[];
+  SIGNALS.forEach(s => {
+    const r = ORBITS.behaviour.r + s.jit;
+    const p = polar(s.angle, r);
+    pos.push(p.x, -p.y, (Math.random()-0.5)*160);
+    ops.push(0.55);
+    twP.push(Math.random()*6.283);
+    const twMap = {'s-a':6.283/2.6,'s-b':6.283/3.1,'s-c':6.283/2.9,'s-d':6.283/3.4};
+    twS.push(s.tw ? (twMap[s.tw]||0) : 0);
+  });
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('aOpacity', new THREE.Float32BufferAttribute(ops,1));
+  geo.setAttribute('aTwPhase', new THREE.Float32BufferAttribute(twP,1));
+  geo.setAttribute('aTwSpeed', new THREE.Float32BufferAttribute(twS,1));
+
+  const pH = threeRenderer.getSize(new THREE.Vector2()).y * threeRenderer.getPixelRatio();
+  const visH = 2 * CAM_Z * CAM_HALF_TAN;
+  const sc = pH / visH;
+
+  signalsMat = new THREE.ShaderMaterial({
+    uniforms: { uTime:{value:0}, uScale:{value:sc} },
+    vertexShader: `
+      attribute float aOpacity;
+      attribute float aTwPhase;
+      attribute float aTwSpeed;
+      uniform float uTime;
+      uniform float uScale;
+      varying float vA;
+      void main(){
+        float tw = aTwSpeed > 0.0 ? mix(0.3,0.88,0.5+0.5*sin(uTime*aTwSpeed+aTwPhase)) : aOpacity;
+        vA = tw;
+        vec4 mvPos = modelViewMatrix * vec4(position,1.0);
+        gl_Position = projectionMatrix * mvPos;
+        float dist = -mvPos.z;
+        gl_PointSize = clamp(8.0 * uScale * (${CAM_Z.toFixed(1)} / dist), 2.0, 48.0);
+      }`,
+    fragmentShader: `
+      varying float vA;
+      void main(){
+        float d = length(gl_PointCoord - 0.5)*2.0;
+        if(d > 1.0) discard;
+        float a = smoothstep(1.0,0.0,d);
+        vec3 c = mix(vec3(0.78,0.70,0.54),vec3(0.96,0.91,0.83),smoothstep(0.8,0.0,d));
+        gl_FragColor = vec4(c, vA*a);
+      }`,
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  });
+
+  const signalPoints = new THREE.Points(geo, signalsMat);
+  signalPoints.frustumCulled = false;
+  constGroup.add(signalPoints);
+}
+
+/* ── nodes (anchors, known, open seats) ── */
+function _buildNodes() {
+  NODES.forEach((n, idx) => {
+    const p = nodePos(n);
+    const px = p.x, py = -p.y;
+    const Z_ORBIT = { formative: 20, intentional: 50, behaviour: 90 };
+    const zRange = Z_ORBIT[n.orbit] || 20;
+    const nz = ((idx * 0.618033988) % 1 - 0.5) * 2 * zRange;
+
+    if (n.type === 'open') {
+      const tex = makeGlowTex(128, [
+        [0,'rgba(244,178,102,0.50)'],[0.18,'rgba(230,160,80,0.22)'],
+        [0.45,'rgba(200,136,74,0.08)'],[1,'rgba(200,136,74,0)'],
+      ]);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, transparent:true, depthWrite:false }));
+      sp.scale.set(36,36,1); sp.position.set(px,py,nz);
+      constGroup.add(sp);
+
+      const cTex = makeGlowTex(64, [
+        [0,'rgba(255,235,190,0.95)'],[0.3,'rgba(244,178,102,0.6)'],
+        [1,'rgba(244,178,102,0)'],
+      ]);
+      const cSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:cTex, transparent:true, depthWrite:false }));
+      cSp.scale.set(10,10,1); cSp.position.set(px,py,nz+1);
+      constGroup.add(cSp);
+
+      const geo = new THREE.CircleGeometry(16,16);
+      const mat = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(px,py,nz);
+      constGroup.add(mesh);
+      clickTargets.push({ mesh, type:'open', id:n.id, worldPos:new THREE.Vector3(px, py, nz) });
+
+      if (n.prompt) {
+        const div = document.createElement('div');
+        div.textContent = n.prompt;
+        div.style.cssText = 'font-family:var(--serif);font-style:italic;font-weight:400;font-size:11px;color:var(--text-secondary);opacity:0;transition:opacity 200ms ease;pointer-events:none;white-space:nowrap';
+        const lbl = new CSS2DObject(div);
+        const lp = polar(p.angle, p.r + 20);
+        lbl.position.set(lp.x, -lp.y, nz);
+        constGroup.add(lbl);
+      }
+
+    } else {
+      const size = SIZES[n.type];
+      const pal = NODE_PALETTES[n.color] || NODE_PALETTES.amber;
+      const sprites = [];
+
+      if (n.type === 'anchor' && pal.bloom) {
+        const bTex = makeBloomTex(pal.bloom);
+        const bSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:bTex, transparent:true, depthWrite:false, opacity:0.85 }));
+        bSp.scale.set(size*6.4, size*6.4, 1);
+        bSp.position.set(px, py, nz-1);
+        constGroup.add(bSp);
+        sprites.push(bSp);
+      }
+
+      const nTex = makeNodeTex(pal.c, pal.m);
+      const nSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:nTex, transparent:true, depthWrite:false }));
+      nSp.scale.set(size*2, size*2, 1);
+      nSp.position.set(px, py, nz+1);
+      constGroup.add(nSp);
+      sprites.push(nSp);
+
+      const hitR = n.type === 'anchor' ? size * 3 : size * 2.5;
+      const geo = new THREE.CircleGeometry(hitR, 16);
+      const hMat = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false });
+      const hMesh = new THREE.Mesh(geo, hMat);
+      hMesh.position.set(px, py, nz);
+      constGroup.add(hMesh);
+
+      const la = labelAnchor(p.angle);
+      const lp = polar(p.angle, p.r + LABEL_OFFSET[n.type]);
+      const div = document.createElement('div');
+      div.textContent = n.label;
+      if (n.type === 'anchor') {
+        div.style.cssText = 'font-family:var(--serif);font-weight:400;font-size:14px;color:var(--amber);letter-spacing:.005em;white-space:nowrap;pointer-events:none';
+      } else {
+        div.style.cssText = 'font-family:var(--serif);font-weight:400;font-size:11px;color:var(--text-secondary);letter-spacing:.005em;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 500ms ease';
+        if (n.orbit === 'behaviour') div.style.fontSize = '10px';
+      }
+      const lblObj = new CSS2DObject(div);
+      lblObj.position.set(lp.x, -lp.y, nz);
+      constGroup.add(lblObj);
+
+      clickTargets.push({ mesh:hMesh, type:n.type, id:n.id, sprites, labelDiv:div, worldPos:new THREE.Vector3(px, py, nz) });
+    }
+  });
+}
+
+/* ── 3D chamber ── */
+let chamberGroup = null;
+let chamberTargets = [];   // click targets for memories
+let chamberLabels = [];    // CSS2DObject labels
+let chamberSprites = [];   // all sprites for opacity animation
+
+const MEM_COLORS = {
+  amber:  { c: [255,240,216], m: [244,178,102], e: [168,99,44] },
+  cream:  { c: [251,242,214], m: [236,217,164], e: [136,96,32] },
+  gold:   { c: [254,240,200], m: [232,200,120], e: [128,102,32] },
+  copper: { c: [255,220,192], m: [220,160,100], e: [160,100,50] },
+  rose:   { c: [255,220,224], m: [220,160,170], e: [160,80,100] },
+};
+
+function buildChamberScene(anchorId) {
+  destroyChamberScene(); // clean any previous
+
+  const anchorTgt = clickTargets.find(t => t.type === 'anchor' && t.id === anchorId);
+  if (!anchorTgt) return;
+
+  const mems = memoriesForAnchor(MEMORY_GROUPS, anchorId);
+  if (!mems.length) return;
+
+  chamberGroup = new THREE.Group();
+  // Position at anchor's local position (within constGroup)
+  chamberGroup.position.copy(anchorTgt.worldPos);
+  constGroup.add(chamberGroup);
+
+  // Scale memory radii to fit the camera's FOV at the arrival distance.
+  // Camera arrives 180 units from anchor; FOV 45° → visible half-height ~75.
+  // SVG memories at r=195-300 → scale down to ~60-95 range.
+  const MEM_SCALE = 0.35;
+
+  mems.forEach((m, idx) => {
+    const p = polar(m.angle, m.r * MEM_SCALE);
+    const mz = ((idx * 0.618033988 + 0.3) % 1 - 0.5) * 60; // z-spread ±30
+
+    // Memory color — use same palette as L1 nodes for consistency
+    const col = normalizeColor(m.grad.replace('gMem','').toLowerCase());
+    const pal = NODE_PALETTES[col] || NODE_PALETTES.amber;
+    const scale = m.size * 0.9;   // sized for close-up FOV
+
+    // Bloom halo (soft outer glow) — same as L1 anchors
+    const phase = idx * 2.39996; // golden angle for phase spread
+    if (pal.bloom) {
+      const bTex = makeBloomTex(pal.bloom);
+      const bMat = new THREE.SpriteMaterial({ map: bTex, transparent: true, depthWrite: false, opacity: 0 });
+      const bSp = new THREE.Sprite(bMat);
+      const bloomScale = scale * 3.2;
+      bSp.scale.set(bloomScale, bloomScale, 1);
+      bSp.position.set(p.x, -p.y, mz - 1);
+      bSp.userData.baseOp = m.tier === 1 ? 0.7 : m.tier === 2 ? 0.5 : 0.35;
+      bSp.userData.baseScale = bloomScale;
+      bSp.userData.tier = m.tier;
+      bSp.userData.phase = phase;
+      chamberGroup.add(bSp);
+      chamberSprites.push(bSp);
+    }
+
+    // Core sprite — same makeNodeTex as L1 nodes
+    const nTex = makeNodeTex(pal.c, pal.m);
+    const mat = new THREE.SpriteMaterial({ map: nTex, transparent: true, depthWrite: false, opacity: 0 });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(scale, scale, 1);
+    sp.position.set(p.x, -p.y, mz);
+    sp.userData.baseOp = 1;
+    sp.userData.tier = m.tier;
+    sp.userData.baseScale = scale;
+    sp.userData.phase = phase;
+    chamberGroup.add(sp);
+    chamberSprites.push(sp);
+
+    // Connector line (dashed)
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(p.x, -p.y, mz),
+    ]);
+    const dashOp = m.tier === 1 ? 0.16 : m.tier === 2 ? 0.10 : 0.06;
+    const lineMat = new THREE.LineDashedMaterial({
+      color: 0xf4b266, transparent: true, opacity: 0,
+      dashSize: 3, gapSize: 8,
+    });
+    lineMat.userData = { baseOp: dashOp };
+    const line = new THREE.Line(lineGeo, lineMat);
+    line.computeLineDistances();
+    chamberGroup.add(line);
+    chamberSprites.push(line); // track for opacity animation
+
+    // Label (CSS2D)
+    const lp = polar(m.angle, m.r * MEM_SCALE + m.size + 14);
+    const div = document.createElement('div');
+    div.textContent = m.label;
+    const fontSize = m.tier === 1 ? '14px' : m.tier === 2 ? '12px' : '10px';
+    const color = m.tier === 1 ? 'var(--text-primary)' : m.tier === 2 ? 'var(--text-secondary)' : 'var(--text-muted)';
+    div.style.cssText = `font-family:var(--serif);font-style:italic;font-weight:400;font-size:${fontSize};color:${color};letter-spacing:.005em;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 200ms ease`;
+    const lbl = new CSS2DObject(div);
+    lbl.position.set(lp.x, -lp.y, mz);
+    chamberGroup.add(lbl);
+    chamberLabels.push(lbl);
+
+    // Hit target
+    const hitR = m.size * 1.8;
+    const geo = new THREE.CircleGeometry(hitR, 16);
+    const hMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+    const hMesh = new THREE.Mesh(geo, hMat);
+    hMesh.position.set(p.x, -p.y, mz);
+    chamberGroup.add(hMesh);
+    chamberTargets.push({ mesh: hMesh, type: 'memory', id: m.id, worldPos: new THREE.Vector3(p.x + anchorTgt.worldPos.x, -p.y + anchorTgt.worldPos.y, mz + anchorTgt.worldPos.z) });
+  });
+
+  // Anchor caption (CSS2D) — positioned below anchor center
+  const captionDiv = document.createElement('div');
+  const anchor = NODES.find(n => n.id === anchorId);
+  const memCount = mems.length;
+  captionDiv.innerHTML = `<div style="font-family:var(--serif);font-weight:500;font-size:18px;color:var(--amber);letter-spacing:.005em;text-align:center">${anchor?.label || anchorId}</div>
+    <div style="margin-top:6px;font-family:var(--sans);font-weight:400;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:rgba(244,178,102,0.55);text-align:center">${memCount} memor${memCount === 1 ? 'y' : 'ies'} · ${ORBITS[anchor?.orbit]?.label || ''}</div>`;
+  captionDiv.style.cssText = 'pointer-events:none;opacity:0;transition:opacity 200ms ease;white-space:nowrap';
+  const captionLbl = new CSS2DObject(captionDiv);
+  captionLbl.position.set(0, -40, 0);
+  chamberGroup.add(captionLbl);
+  chamberLabels.push(captionLbl);
+}
+
+function setChamberOpacity(t) {
+  // t: 0 (invisible) → 1 (fully visible)
+  let lineIdx = 0, lineCount = 0;
+  chamberSprites.forEach(obj => { if (obj.isLine) lineCount++; });
+
+  chamberSprites.forEach(obj => {
+    if (obj.isSprite) {
+      obj.material.opacity = t * (obj.userData.baseOp ?? 1);
+    } else if (obj.isLine) {
+      // Progressive reveal: each connector fades in during its slice of t
+      const sliceStart = lineCount > 1 ? (lineIdx / lineCount) * 0.5 : 0;
+      const sliceEnd = sliceStart + 0.5;
+      const lineT = Math.max(0, Math.min(1, (t - sliceStart) / (sliceEnd - sliceStart)));
+      obj.material.opacity = lineT * (obj.material.userData?.baseOp ?? 0.1);
+      lineIdx++;
+    }
+  });
+  chamberLabels.forEach((lbl, i) => {
+    // Stagger label appearance slightly
+    const delay = i * 0.08;
+    const lblT = Math.max(0, Math.min(1, (t - delay) / (1 - delay)));
+    lbl.element.style.opacity = String(lblT);
+  });
+}
+
+function destroyChamberScene() {
+  if (chamberGroup) {
+    constGroup.remove(chamberGroup);
+    // Dispose geometries and materials
+    chamberGroup.traverse(child => {
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        if (child.material.map) child.material.map.dispose();
+        child.material.dispose();
+      }
+    });
+    chamberGroup = null;
+  }
+  chamberTargets = [];
+  chamberLabels = [];
+  chamberSprites = [];
+}
+
+/* ── orbit controls ── */
+let orbitControls = null;
+
+/* ── camera breathing ── */
+const BREATH = {
+  xAmp: 18,   yAmp: 12,   zAmp: 40,
+  xPd: 23,    yPd: 29,    zPd: 19,    // prime-ish periods avoid looping
+};
+
+/* ── animation loop ── */
+function threeAnimate() {
+  threeRAF = requestAnimationFrame(threeAnimate);
+  const t = (performance.now() - threeT0) / 1000;
+
+  if (scrollFly.active) {
+    // Freeze constellation rotation during fly (no tilt, no spin)
+    constGroup.rotation.set(0, 0, scrollFly.frozenRotation);
+    if (orbitControls) orbitControls.enabled = false;
+    updateScrollFly();
+    // Camera looks toward anchor during fly
+    const lookBlend = Math.min(1, scrollFly.progress * 3); // 0→1 over first third
+    if (lookBlend > 0.01 && scrollFly.lookTarget) {
+      const lookPt = new THREE.Vector3().lerpVectors(
+        new THREE.Vector3(0, 0, 0), scrollFly.lookTarget, lookBlend);
+      threeCamera.lookAt(lookPt);
+    }
+  } else if (state.screen === 'chamber') {
+    // Keep constellation rotation frozen while in chamber so memories stay in view
+    constGroup.rotation.set(0, 0, scrollFly.frozenRotation);
+  } else {
+    constGroup.rotation.z = -(t / 1140) * Math.PI * 2;
+    if (orbitControls && state.screen === 'l1') {
+      orbitControls.enabled = true;
+      orbitControls.update();
+    }
+  }
+
+  // Billboard nebula — always face the camera
+  if (nebulaMesh) nebulaMesh.quaternion.copy(threeCamera.quaternion);
+
+  // Chamber memory breathing — gentle scale pulse when chamber is visible
+  if (chamberGroup && (state.screen === 'chamber' || scrollFly.active)) {
+    chamberSprites.forEach(obj => {
+      if (obj.isSprite && obj.userData.baseScale) {
+        const tier = obj.userData.tier || 2;
+        const pd = tier === 1 ? 5.5 : tier === 2 ? 7.3 : 9.1;
+        const amp = tier === 1 ? 0.06 : tier === 2 ? 0.04 : 0.03;
+        const pulse = 1 + amp * Math.sin(t * 2 * Math.PI / pd + obj.userData.phase);
+        const bs = obj.userData.baseScale;
+        obj.scale.set(bs * pulse, bs * pulse, 1);
+      }
+    });
+  }
+
+  if (starsMat) starsMat.uniforms.uTime.value = t;
+  if (signalsMat) signalsMat.uniforms.uTime.value = t;
+  if (galaxyMat) galaxyMat.uniforms.iTime.value = t;
+  if (nebulaMat) nebulaMat.uniforms.iTime.value = t;
+
+  threeRenderer.render(threeScene, threeCamera);
+  threeCssRenderer.render(threeScene, threeCamera);
+}
+
+function startThreeAnim() { if (!threeRAF) threeAnimate(); }
+function stopThreeAnim() { if (threeRAF) { cancelAnimationFrame(threeRAF); threeRAF = null; } }
+
+/* ── search support ── */
+function threeHandleSearch(q) {
+  if (!q) {
+    clickTargets.forEach(t => {
+      if (t.sprites) t.sprites.forEach(s => {
+        if (s.userData.baseOp !== undefined) s.material.opacity = s.userData.baseOp;
+      });
+      if (t.labelDiv && t.type !== 'anchor') t.labelDiv.style.opacity = '0';
+      else if (t.labelDiv) t.labelDiv.style.opacity = '';
+    });
+    return 0;
+  }
+  let count = 0;
+  clickTargets.forEach(t => {
+    let text = '';
+    if (t.type === 'gap') text = t.id.toLowerCase();
+    else if (t.type === 'core') text = 'core eva';
+    else { const nd = NODES.find(nn => nn.id === t.id); text = (nd?.label || '').toLowerCase(); }
+    const match = text.includes(q);
+    if (match) count++;
+    if (t.sprites) {
+      t.sprites.forEach(s => {
+        if (s.userData.baseOp === undefined) s.userData.baseOp = s.material.opacity;
+        s.material.opacity = match ? s.userData.baseOp : s.userData.baseOp * 0.15;
+      });
+    }
+    if (t.labelDiv) t.labelDiv.style.opacity = match ? '1' : '0.15';
+  });
+  return count;
+}
+
+// ════════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════════
 async function init() {
   await loadData();
 
-  document.getElementById('l1-spin').innerHTML =
-    genStars(1, 460) + genWisps() + genVoidCore() + genSignals() + genNodes();
+  // L1: Three.js scene (replaces SVG)
+  initThreeScene();
 
-  document.getElementById('chamber-halo').innerHTML = genChamberHalo();
-  document.getElementById('chamber-spin').innerHTML = genStars(2, 345) + genWisps();
-  const cm = genChamberMemories();
-  document.getElementById('chamber-connectors').innerHTML = cm.conn;
-  document.getElementById('chamber-memories').innerHTML = cm.mem;
+  // L2 Chamber: now rendered in 3D (buildChamberScene), SVG generation removed
 
   document.getElementById('draft-spin').innerHTML = genStars(3, 160);
   document.getElementById('profile-spin').innerHTML = genStars(4, 200);
 
-
-  // L1 node clicks
-  document.getElementById('l1-spin').addEventListener('click', (e) => {
-    if (state.panelOpen) return;
-    const nodeG = e.target.closest('.node');
-    const gapG = e.target.closest('[data-gap]');
-    const coreG = e.target.closest('.core-group');
-
-    if (nodeG) {
-      const id = nodeG.dataset.id;
-      const type = nodeG.dataset.type;
-      if (type === 'anchor') {
-        state.chamberAnchor = id;
-        rebuildChamber(id);
-        showScreen('chamber');
-      } else if (type === 'open') {
-        showScreen('draft');
-      } else {
-        openPanel('known', id);
-      }
-    } else if (gapG) {
-      const gapName = gapG.dataset.gap;
-      openPanel('gap', gapName);
-    } else if (coreG) {
-      document.getElementById('profile-content').innerHTML = buildProfileContent();
-      showScreen('profile');
-    }
-  });
-
-  // Chamber memory clicks
-  document.getElementById('chamber-memories').addEventListener('click', (e) => {
-    if (state.panelOpen) return;
-    const memG = e.target.closest('.chamber-mem');
-    if (memG) openPanel('memory', memG.dataset.mem);
-  });
+  // L1 clicks handled by Three.js raycaster (see initThreeScene)
+  // Chamber memory clicks handled by Three.js hit test (see hitTest)
 
   // Chamber back
   document.getElementById('chamber-back').addEventListener('click', () => {
@@ -1813,424 +2688,58 @@ async function init() {
     });
   }
 
-  // Scroll zoom
-  let scrollCooldown = false;
+  // Scroll-driven fly: L1 scroll advances fly progress when locked on
   document.getElementById('screen-l1').addEventListener('wheel', (e) => {
-    if (state.panelOpen || scrollCooldown) return;
-    if (e.deltaY < -15) {
-      scrollCooldown = true;
-      showScreen('chamber');
-      setTimeout(() => { scrollCooldown = false; }, 800);
-    }
-  }, { passive: true });
+    if (state.panelOpen) return;
+    if (!scrollFly.active) return; // no anchor locked — ignore scroll
+    e.preventDefault();
+    // Scroll down (positive deltaY) = fly deeper, scroll up = pull back
+    scrollFly.target = Math.max(0, Math.min(1, scrollFly.target + e.deltaY * 0.002));
+  }, { passive: false });
 
+  // Chamber scroll: scroll up (negative deltaY) to fly back out
   document.getElementById('screen-chamber').addEventListener('wheel', (e) => {
-    if (state.panelOpen || scrollCooldown) return;
-    if (e.deltaY > 15) {
-      scrollCooldown = true;
-      showScreen('l1');
-      setTimeout(() => { scrollCooldown = false; }, 800);
+    if (state.panelOpen) return;
+    if (e.deltaY >= 0) return; // only scroll-up pulls back
+    e.preventDefault();
+    // Re-enter scroll-fly mode in reverse
+    const l1 = document.getElementById('screen-l1');
+    if (!l1.classList.contains('active')) {
+      l1.classList.add('active');
+      startThreeAnim();
     }
-  }, { passive: true });
-}
-
-init();
-
-// ── GALAXY BACKGROUND — domain-warped nebula inspired by Galaxy Trip (Shadertoy) ──
-// Technique: fbm + domain warping (marble/turbulence) — warm amber palette, very subtle
-(function() {
-  const canvas = document.getElementById('galaxy-bg');
-  if (!canvas) return;
-  const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
-  if (!gl) return;
-
-  function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // cap for perf
-    canvas.width = canvas.clientWidth * dpr;
-    canvas.height = canvas.clientHeight * dpr;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  const VS = `attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0,1);}`;
-
-  const FS = `
-precision highp float;
-uniform vec2 iResolution;
-uniform float iTime;
-
-// --- hash-based noise (no texture needed) ---
-float hash(float n) { return fract(sin(n) * 43758.5453123); }
-float hash2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-
-float noise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float a = hash2(i);
-  float b = hash2(i + vec2(1.0, 0.0));
-  float c = hash2(i + vec2(0.0, 1.0));
-  float d = hash2(i + vec2(1.0, 1.0));
-  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-}
-
-// --- fbm with 5 octaves ---
-float fbm(vec2 p) {
-  float f = 0.0;
-  float amp = 0.5;
-  mat2 m = mat2(1.6, 1.2, -1.2, 1.6); // rotation to break up repetition
-  for (int i = 0; i < 5; i++) {
-    f += amp * noise(p);
-    p = m * p;
-    amp *= 0.5;
-  }
-  return f;
-}
-
-// --- domain warping ---
-float warpedFbm(vec2 p, float t) {
-  // first warp
-  vec2 q = vec2(
-    fbm(p + vec2(0.0, 0.0) + t * 0.012),
-    fbm(p + vec2(5.2, 1.3) - t * 0.008)
-  );
-  // second warp (warping the warp)
-  vec2 r = vec2(
-    fbm(p + 4.0 * q + vec2(1.7, 9.2) + t * 0.006),
-    fbm(p + 4.0 * q + vec2(8.3, 2.8) - t * 0.010)
-  );
-  return fbm(p + 4.0 * r);
-}
-
-void main() {
-  vec2 uv = gl_FragCoord.xy / iResolution.xy;
-  // center and scale
-  vec2 p = (gl_FragCoord.xy - 0.5 * iResolution.xy) / min(iResolution.x, iResolution.y);
-  p *= 2.8; // zoom out a bit to see more structure
-
-  float t = iTime;
-
-  // compute warped noise
-  float f = warpedFbm(p, t);
-
-  // second layer at different scale for depth
-  float f2 = warpedFbm(p * 0.6 + vec2(10.0), t * 0.7);
-
-  // blend layers
-  float combined = mix(f, f2, 0.4);
-
-  // --- warm amber/copper palette ---
-  // map noise value to color
-  vec3 col1 = vec3(0.18, 0.08, 0.02);   // deep brown (shadows)
-  vec3 col2 = vec3(0.60, 0.28, 0.08);   // warm copper
-  vec3 col3 = vec3(0.95, 0.70, 0.35);   // bright amber
-  vec3 col4 = vec3(0.35, 0.22, 0.45);   // cool violet accent (depth)
-
-  vec3 color = mix(col1, col2, smoothstep(0.0, 0.45, combined));
-  color = mix(color, col3, smoothstep(0.45, 0.75, combined));
-  // add subtle cool accent in the mid-tones
-  color = mix(color, col4, smoothstep(0.3, 0.5, combined) * (1.0 - smoothstep(0.5, 0.7, combined)) * 0.25);
-
-  // --- brightness envelope ---
-  // vignette: tight falloff, most of the edges stay dark
-  float dist = length((uv - 0.5) * vec2(iResolution.x / iResolution.y, 1.0));
-  float vignette = 1.0 - smoothstep(0.1, 0.48, dist);
-
-  // crush low values hard — dark regions stay truly black
-  float contrast = smoothstep(0.35, 0.65, combined);
-
-  // overall brightness — restrained so the galaxy is a hint, not a wash
-  float brightness = 0.055;
-  color *= brightness * vignette * contrast;
-
-  // extra fade near the void core center so the nebula star shader stands out
-  float centerFade = smoothstep(0.0, 0.22, dist);
-  color *= mix(0.1, 1.0, centerFade);
-
-  gl_FragColor = vec4(color, 1.0);
-}`;
-
-  function compile(src, type) {
-    const sh = gl.createShader(type);
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-      console.warn('Galaxy shader:', gl.getShaderInfoLog(sh));
-      return null;
-    }
-    return sh;
-  }
-  const vs = compile(VS, gl.VERTEX_SHADER);
-  const fs = compile(FS, gl.FRAGMENT_SHADER);
-  if (!vs || !fs) return;
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vs); gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-    console.warn('Galaxy link:', gl.getProgramInfoLog(prog));
-    return;
-  }
-  gl.useProgram(prog);
-
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-  const aLoc = gl.getAttribLocation(prog, 'a_pos');
-  gl.enableVertexAttribArray(aLoc);
-  gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
-
-  const uRes = gl.getUniformLocation(prog, 'iResolution');
-  const uTime = gl.getUniformLocation(prog, 'iTime');
-
-  const t0 = performance.now();
-  let raf;
-
-  function render() {
-    const t = (performance.now() - t0) / 1000;
-    gl.uniform2f(uRes, canvas.width, canvas.height);
-    gl.uniform1f(uTime, t);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    raf = requestAnimationFrame(render);
-  }
-
-  // only run when L1 visible
-  const obs = new MutationObserver(() => {
-    const on = document.getElementById('screen-l1').classList.contains('active');
-    if (on && !raf) { resize(); render(); }
-    else if (!on && raf) { cancelAnimationFrame(raf); raf = null; }
-  });
-  obs.observe(document.getElementById('screen-l1'), { attributes: true, attributeFilter: ['class'] });
-  render();
-})();
-
-// ── NEBULA STAR — WebGL port of "Dusty nebula 4" by Duke (Shadertoy MsVXWW) ──
-// License: CC BY-NC-SA 3.0  — uses noise texture approach from nebula.html
-(function() {
-  const canvas = document.getElementById('nebula-star');
-  if (!canvas) return;
-  const gl = canvas.getContext('webgl', { alpha: false, antialias: false });
-  if (!gl) return;
-
-  const VS = `attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0,1);}`;
-
-  const FS = `
-precision highp float;
-uniform vec2 iResolution;
-uniform float iTime;
-uniform sampler2D iChannel0;
-
-#define ROTATION
-#define DITHERING
-#define BACKGROUND
-
-#define pi 3.14159265
-#define R(p, a) p=cos(a)*p+sin(a)*vec2(p.y, -p.x)
-
-float noise(in vec3 x) {
-  vec3 p = floor(x);
-  vec3 f = fract(x);
-  f = f*f*(3.0-2.0*f);
-  vec2 uv = (p.xy + vec2(37.0,17.0)*p.z) + f.xy;
-  vec2 rg = texture2D(iChannel0, (uv + 0.5)/256.0).yx;
-  return 1.0 - 0.82*mix(rg.x, rg.y, f.z);
-}
-
-float rand(vec2 co) {
-  return fract(sin(dot(co*0.123, vec2(12.9898,78.233))) * 43758.5453);
-}
-
-const float nudge = 0.739513;
-float normalizer = 1.0 / sqrt(1.0 + nudge*nudge);
-
-float SpiralNoiseC(vec3 p) {
-  float n = 0.0; float iter = 1.0;
-  for (int i = 0; i < 8; i++) {
-    n += -abs(sin(p.y*iter) + cos(p.x*iter)) / iter;
-    p.xy += vec2(p.y, -p.x) * nudge; p.xy *= normalizer;
-    p.xz += vec2(p.z, -p.x) * nudge; p.xz *= normalizer;
-    iter *= 1.733733;
-  }
-  return n;
-}
-float SpiralNoise3D(vec3 p) {
-  float n = 0.0; float iter = 1.0;
-  for (int i = 0; i < 5; i++) {
-    n += (sin(p.y*iter) + cos(p.x*iter)) / iter;
-    p.xz += vec2(p.z, -p.x) * nudge; p.xz *= normalizer;
-    iter *= 1.33733;
-  }
-  return n;
-}
-float NebulaNoise(vec3 p) {
-  float f = p.y + 4.5;
-  f -= SpiralNoiseC(p.xyz);
-  f += SpiralNoiseC(p.zxy*0.5123+100.0)*4.0;
-  f -= SpiralNoise3D(p);
-  return f;
-}
-float map(vec3 p) {
-  #ifdef ROTATION
-  R(p.xz, iTime*0.1);
-  #endif
-  return abs(NebulaNoise(p/0.5)*0.5) + 0.03;
-}
-
-vec3 computeColor(float density, float radius) {
-  vec3 result = mix(vec3(1.0,0.9,0.8), vec3(0.4,0.15,0.1), density);
-  result *= mix(7.0*vec3(0.8,1.0,1.0), 1.5*vec3(0.48,0.53,0.5), min((radius+0.05)/0.9, 1.15));
-  return result;
-}
-
-bool RaySphereIntersect(vec3 org, vec3 dir, out float near, out float far) {
-  float b = dot(dir, org);
-  float c = dot(org, org) - 8.0;
-  float delta = b*b - c;
-  if (delta < 0.0) return false;
-  float sq = sqrt(delta);
-  near = -b - sq; far = -b + sq;
-  return far > 0.0;
-}
-
-void main() {
-  vec3 rd = normalize(vec3((gl_FragCoord.xy - 0.5*iResolution)/iResolution.y, 1.0));
-  vec3 ro = vec3(0.0, 0.0, -6.0);
-
-  R(rd.yz, -pi*3.93); R(rd.xz, pi*3.2);
-  R(ro.yz, -pi*3.93); R(ro.xz, pi*3.2);
-
-  #ifdef DITHERING
-  vec2 seed = gl_FragCoord.xy/iResolution + fract(iTime);
-  #endif
-
-  float ld=0.,td=0.,w=0.,d=1.,t=0.;
-  const float h = 0.1;
-  vec4 sum = vec4(0.0);
-  float mn=0.,mx=0.;
-
-  if (RaySphereIntersect(ro, rd, mn, mx)) {
-    t = mn*step(t,mn);
-    for (int i=0; i<56; i++) {
-      vec3 pos = ro + t*rd;
-      if (td>.9 || d<.1*t || t>10. || sum.a>.99 || t>mx) break;
-      float d = map(pos);
-      d = max(d, 0.08);
-      vec3 ldst = -pos;
-      float lD = max(length(ldst), 0.001);
-      sum.rgb += vec3(1.0,0.5,0.25)/(lD*lD)/30.0;
-      if (d < h) {
-        ld = h - d;
-        w = (1.0 - td) * ld;
-        td += w + 1.0/200.0;
-        vec4 col = vec4(computeColor(td, lD), td);
-        col.a *= 0.185; col.rgb *= col.a;
-        sum += col*(1.0 - sum.a);
+    if (!scrollFly.active) {
+      if (!scrollFly.startPos) {
+        scrollFly.startPos = new THREE.Vector3(0, 0, CAM_Z);
+        scrollFly.endPos = threeCamera.position.clone();
       }
-      td += 1.0/70.0;
-      d = max(d, 0.04);
-      #ifdef DITHERING
-      d = abs(d)*(0.8 + 0.2*rand(seed*vec2(float(i))));
-      #endif
-      t += max(d*0.1*max(min(length(ldst),length(ro)),1.0), 0.02);
+      scrollFly.frozenRotation = scrollFly.frozenRotation ?? constGroup.rotation.z;
+      scrollFly.lookTarget = scrollFly.lookTarget ?? null;
+      scrollFly.active = true;
+      scrollFly.progress = 1;
+      scrollFly.target = 1;
+      scrollFly.chamberShown = true;
+      scrollFly.autoReturn = false;
     }
-    sum *= 1.0/exp(ld*0.2)*0.6;
-    sum = clamp(sum, 0.0, 1.0);
-    sum.xyz = sum.xyz*sum.xyz*(3.0-2.0*sum.xyz);
-  }
+    scrollFly.target = Math.max(0, Math.min(1, scrollFly.target + e.deltaY * 0.002));
+  }, { passive: false });
+}
 
-  #ifdef BACKGROUND
-  if (td < 0.8) {
-    vec3 stars = vec3(noise(rd*500.0)*0.5+0.5);
-    vec3 starbg = mix(vec3(0), vec3(0.8,0.9,1.0), smoothstep(0.99,1.0,stars)*clamp(dot(vec3(0),rd)+0.75,0.,1.));
-    sum.xyz += clamp(starbg, 0.0, 1.0);
-  }
-  #endif
-
-  gl_FragColor = vec4(sum.xyz, 1.0);
-}`;
-
-  function compile(src, type) {
-    const sh = gl.createShader(type);
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-      console.warn('Nebula shader:', gl.getShaderInfoLog(sh));
-      return null;
-    }
-    return sh;
-  }
-  const vs = compile(VS, gl.VERTEX_SHADER);
-  const fs = compile(FS, gl.FRAGMENT_SHADER);
-  if (!vs || !fs) return;
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vs); gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
-  gl.useProgram(prog);
-
-  // fullscreen quad
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-  const aLoc = gl.getAttribLocation(prog, 'a_pos');
-  gl.enableVertexAttribArray(aLoc);
-  gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
-
-  // generate 256×256 noise texture (matches Shadertoy iChannel0)
-  const sz = 256;
-  const noiseData = new Uint8Array(sz * sz * 4);
-  for (let i = 0; i < sz * sz; i++) {
-    noiseData[i*4]   = Math.random() * 255 | 0;
-    noiseData[i*4+1] = Math.random() * 255 | 0;
-    noiseData[i*4+2] = Math.random() * 255 | 0;
-    noiseData[i*4+3] = 255;
-  }
-  const tex = gl.createTexture();
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sz, sz, 0, gl.RGBA, gl.UNSIGNED_BYTE, noiseData);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-  const uRes = gl.getUniformLocation(prog, 'iResolution');
-  const uTime = gl.getUniformLocation(prog, 'iTime');
-  const uCh0 = gl.getUniformLocation(prog, 'iChannel0');
-  gl.uniform2f(uRes, canvas.width, canvas.height);
-  gl.uniform1i(uCh0, 0);
-
-  const t0 = performance.now();
-  let raf;
-  const half = canvas.width / 2;
-  let coreSpark = null;
-
-  function findCore() {
-    coreSpark = document.querySelector('.core-spark');
-  }
-
-  function render() {
-    if (!coreSpark) findCore();
-    // track void core position through rotation
-    if (coreSpark) {
-      const r = coreSpark.getBoundingClientRect();
-      canvas.style.left = (r.x + r.width / 2 - half) + 'px';
-      canvas.style.top = (r.y + r.height / 2 - half) + 'px';
-    }
-    gl.uniform1f(uTime, (performance.now() - t0) / 1000);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    raf = requestAnimationFrame(render);
-  }
-
-  // only run when L1 visible
-  const obs = new MutationObserver(() => {
-    const on = document.getElementById('screen-l1').classList.contains('active');
-    if (on && !raf) render();
-    else if (!on && raf) { cancelAnimationFrame(raf); raf = null; }
+init().then(() => {
+  // Three.js animation: run when L1 is visible OR during scroll-fly
+  const threeObs = new MutationObserver(() => {
+    const on = document.getElementById('screen-l1').classList.contains('active') || scrollFly.active;
+    if (on) startThreeAnim();
+    else stopThreeAnim();
   });
-  obs.observe(document.getElementById('screen-l1'), { attributes: true, attributeFilter: ['class'] });
-  render();
-})();
+  threeObs.observe(document.getElementById('screen-l1'), { attributes:true, attributeFilter:['class'] });
+  startThreeAnim();
+
+  /* debug bridge (add ?debug to URL) */
+  if (location.search.includes('debug')) {
+    globalThis.__C = { state, clickTargets, scrollFly, enterScrollFly, cancelScrollFly, chamberGroup: () => chamberGroup, threeCamera, threeScene, threeRenderer, threeCssRenderer, setChamberOpacity, orbitControls };
+  }
+});
 </script>
 </body>
 </html>
