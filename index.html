@@ -1373,6 +1373,7 @@ let galaxyMat = null;      // galaxy background shader
 let nebulaMat = null;      // nebula star shader
 let nebulaMesh = null;     // nebula plane mesh (for resize)
 let clickTargets = [];     // [{mesh, type, id, sprites:[], labelDiv}]
+let openSeatPulse = [];    // open-seat sprites that breathe (spatial presence on L1)
 let threeRAF = null;
 let threeT0 = 0;
 
@@ -2050,6 +2051,29 @@ function _buildStars() {
     else twS.push(0);
   }
 
+  // Distant star clusters — faint, far-back groupings in the periphery that hint
+  // at other constellations beyond this one (the "there's more out there" feeling).
+  // They sit deep in z and out past the main field, so they read as remote and
+  // drift through the corners as the constellation slowly rotates.
+  const cRng = makeRng(7);
+  for (let c = 0; c < 6; c++) {
+    const ca = cRng() * 6.283;
+    const cdist = 580 + cRng() * 360;           // out past the constellation, grazing the edges
+    const cx = Math.cos(ca) * cdist, cy = Math.sin(ca) * cdist;
+    const cz = -280 - cRng() * 360;             // pushed deep for remoteness
+    const cn = 16 + (cRng() * 16 | 0);
+    const spread = 90 + cRng() * 120;
+    const cool = cRng() < 0.7;                  // mostly cool/blue, occasionally warm
+    for (let j = 0; j < cn; j++) {
+      pos.push(cx + (cRng()-0.5)*spread, cy + (cRng()-0.5)*spread, cz + (cRng()-0.5)*spread*0.6);
+      sz.push(0.5 + cRng()*0.7);
+      if (cool) col.push(0.74, 0.80, 0.92); else col.push(0.93, 0.80, 0.64);
+      ops.push(0.12 + cRng()*0.20);             // dim — they're far away
+      twP.push(cRng()*6.283);
+      twS.push(cRng() < 0.3 ? 6.283/5.0 : 0);
+    }
+  }
+
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
   geo.setAttribute('aSize',    new THREE.Float32BufferAttribute(sz,1));
@@ -2289,6 +2313,10 @@ function _buildNodes() {
       const cSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:cTex, transparent:true, depthWrite:false }));
       cSp.scale.set(10,10,1); cSp.position.set(px,py,nz+1);
       constGroup.add(cSp);
+
+      // An open seat is an invitation — give it a slow, breathing presence so it
+      // reads as alive and waiting rather than a static dot.
+      openSeatPulse.push({ outer: sp, inner: cSp, baseOuter: 36, baseInner: 10, phase: idx * 2.39996 });
 
       const geo = new THREE.CircleGeometry(16,16);
       const mat = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false });
@@ -2614,6 +2642,19 @@ function threeAnimate() {
         const bs = obj.userData.baseScale;
         obj.scale.set(bs * pulse, bs * pulse, 1);
       }
+    });
+  }
+
+  // Open seats breathe slowly — a spatial "awaiting" presence, not a flat dot.
+  if (openSeatPulse.length) {
+    openSeatPulse.forEach(o => {
+      const pulse = 0.5 + 0.5 * Math.sin(t * (2 * Math.PI / 5.0) + o.phase); // ~5s, 0→1
+      const so = o.baseOuter * (1 + 0.16 * pulse);
+      o.outer.scale.set(so, so, 1);
+      o.outer.material.opacity = 0.5 + 0.5 * pulse;
+      const si = o.baseInner * (1 + 0.08 * pulse);
+      o.inner.scale.set(si, si, 1);
+      o.inner.material.opacity = 0.68 + 0.32 * pulse;
     });
   }
 
