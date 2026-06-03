@@ -33,7 +33,13 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 
 /* ── SCREENS ── */
 #app{position:relative;width:100vw;height:100vh;overflow:hidden}
-.screen{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(ellipse 1300px 1000px at 50% 50%,var(--bg-warm) 0%,transparent 65%),var(--bg);opacity:0;pointer-events:none;transition:opacity 500ms ease;overflow:hidden;isolation:isolate}
+.screen{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(ellipse 1300px 1000px at 50% 50%,var(--bg-warm) 0%,transparent 65%),var(--bg);opacity:0;pointer-events:none;transition:opacity 500ms ease;overflow:hidden;isolation:isolate;z-index:1}
+/* L1 + chamber let the shared 3D canvas show through */
+#screen-l1{background:transparent}
+/* L1 + chamber float UI above the 3D canvas; empty-space clicks fall through to the canvas */
+#screen-l1.active,#screen-chamber.active{pointer-events:none}
+#screen-l1 .toolbar,#screen-l1 .chat-zone,
+#screen-chamber .chamber-bar,#screen-chamber .chat-zone{pointer-events:auto}
 .screen.active{opacity:1;pointer-events:auto}
 
 /* ── ZOOM TRANSITIONS L1 ↔ CHAMBER ── */
@@ -58,9 +64,9 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 @keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
 
 /* ── THREE.JS CONTAINER ── */
-#three-container{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+#three-container{position:absolute;inset:0;width:100%;height:100%;z-index:0}
 #three-container canvas{display:block}
-.screen.dimmed #three-container{opacity:.25;transition:opacity 400ms ease}
+#app.dimmed #three-container{opacity:.25;transition:opacity 400ms ease}
 
 /* ── WISPS ── */
 .wisp{transform-box:fill-box;transform-origin:center}
@@ -153,7 +159,7 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 .screen.dimmed .constellation{opacity:.25;transition:opacity 400ms ease}
 
 /* ── CHAMBER ── */
-#screen-chamber{background:radial-gradient(ellipse 1300px 1000px at 50% 50%,rgba(22,15,6,0.6) 0%,transparent 65%)}
+#screen-chamber{background:transparent}
 #screen-chamber svg.constellation{display:none}
 #screen-chamber .chamber-anchor-caption{display:none}
 .chamber-bar{position:absolute;top:28px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;z-index:7;font-family:var(--sans)}
@@ -417,10 +423,11 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 
 <!-- APP -->
 <div id="app">
+  <!-- 3D LAYER (shared base for L1 + chamber) -->
+  <div id="three-container"></div>
   <!-- L1 HOME -->
   <div id="screen-l1" class="screen active">
     <main class="stage">
-      <div id="three-container"></div>
       <div class="search-result-pin" id="search-pin">
         <div class="pin-eyebrow">1 match</div>
         <div class="pin-prose">care lives only on your rim — no memory roots it yet.<br><span class="pin-cta">click the gap to begin →</span></div>
@@ -789,31 +796,6 @@ function genWisps() {
   return `<ellipse class="wisp wisp-a" cx="-280" cy="-200" rx="380" ry="240" fill="url(#wispWarm)" opacity="0.6"/>
 <ellipse class="wisp wisp-b" cx="280" cy="220" rx="340" ry="220" fill="url(#wispCool)" opacity="0.5"/>
 <ellipse class="wisp wisp-c" cx="-100" cy="260" rx="300" ry="180" fill="url(#wispDeep)" opacity="0.55"/>`;
-}
-
-function genChamberHalo() {
-  return `<circle cx="0" cy="0" r="640" fill="url(#coreGlowLargeFixed)"/>
-<ellipse class="halo-cloud halo-drift-a" cx="-50" cy="20" rx="340" ry="260" fill="url(#gNebulaDeepGold)" opacity="0.65"/>
-<ellipse class="halo-cloud" cx="0" cy="0" rx="220" ry="180" fill="url(#gNebulaCrimson)" opacity="0.85"/>
-<ellipse class="halo-cloud halo-drift-b" cx="220" cy="-130" rx="320" ry="260" fill="url(#gNebulaRose)" opacity="0.78"/>
-<ellipse class="halo-cloud halo-drift-c" cx="280" cy="180" rx="280" ry="200" fill="url(#gNebulaViolet)" opacity="0.62"/>
-<ellipse class="halo-cloud halo-drift-d" cx="-280" cy="180" rx="340" ry="260" fill="url(#gNebulaTeal)" opacity="0.68"/>`;
-}
-
-function genChamberMemories(anchorId) {
-  const chamberMems = memoriesForAnchor(MEMORY_GROUPS, anchorId || state.chamberAnchor || 'precision-early-home');
-  let conn = '', mem = '';
-  chamberMems.forEach(m => {
-    const p = polar(m.angle, m.r);
-    conn += `<line x1="0" y1="0" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" class="chamber-connector tier-${m.tier}"/>`;
-    const lp = polar(m.angle, m.r + m.size + 14);
-    const lbl = labelAnchor(m.angle);
-    mem += `<g class="chamber-mem tier-${m.tier}" data-mem="${m.id}">
-      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${m.size}" fill="url(#${m.grad})" class="chamber-mem-body"/>
-      <text x="${lp.x.toFixed(1)}" y="${(lp.y + lbl.dy * 4).toFixed(1)}" text-anchor="${lbl.anchor}" dominant-baseline="middle" class="chamber-mem-label tier-${m.tier}">${m.label}</text>
-    </g>`;
-  });
-  return { conn, mem };
 }
 
 function rebuildChamber(anchorId) {
@@ -1271,6 +1253,7 @@ function openPanel(type, id) {
   panel.classList.add('open');
   const screen = document.getElementById('screen-' + state.screen);
   screen.classList.add('dimmed');
+  document.getElementById('app').classList.add('dimmed'); // dim shared 3D layer
 
   setTimeout(() => {
     const conv = document.getElementById('panel-conv');
@@ -1286,6 +1269,7 @@ function closePanel() {
   state.panelId = null;
   document.getElementById('panel').classList.remove('open');
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('dimmed'));
+  document.getElementById('app').classList.remove('dimmed');
 }
 
 // ════════════════════════════════════════════════════
@@ -1400,7 +1384,9 @@ function makeGlowTex(size, stops) {
   stops.forEach(s => g.addColorStop(s[0], s[1]));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
-  return new THREE.CanvasTexture(c);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 8;
+  return tex;
 }
 
 function hexRGB(hex) {
@@ -1421,15 +1407,17 @@ const NODE_PALETTES = {
 
 function makeNodeTex(cHex, mHex) {
   const [cr,cg,cb] = hexRGB(cHex), [mr,mg,mb] = hexRGB(mHex);
-  return makeGlowTex(128, [
-    [0,`rgba(${cr},${cg},${cb},1)`],[0.22,`rgba(${mr},${mg},${mb},0.95)`],
+  return makeGlowTex(256, [
+    [0,'rgba(255,255,255,1)'],                       // crisp white-hot center keeps stars sharp up close
+    [0.04,`rgba(${cr},${cg},${cb},1)`],
+    [0.10,`rgba(${cr},${cg},${cb},1)`],[0.24,`rgba(${mr},${mg},${mb},0.95)`],
     [0.55,`rgba(${mr},${mg},${mb},0.45)`],[1,`rgba(${mr},${mg},${mb},0)`],
   ]);
 }
 
 function makeBloomTex(hex) {
   const [r,g,b] = hexRGB(hex);
-  return makeGlowTex(128, [
+  return makeGlowTex(256, [
     [0,`rgba(${r},${g},${b},0.28)`],[0.25,`rgba(${r},${g},${b},0.11)`],
     [0.55,`rgba(${r},${g},${b},0.035)`],[1,`rgba(${r},${g},${b},0)`],
   ]);
@@ -1463,7 +1451,7 @@ function enterScrollFly(anchorTgt) {
 
   scrollFly.active = true;
   scrollFly.progress = 0;
-  scrollFly.target = 0.08; // small initial nudge so user sees it respond
+  scrollFly.target = 1; // click flies all the way into the chamber automatically
   scrollFly.startPos = new THREE.Vector3(
     threeCamera.position.x, threeCamera.position.y, threeCamera.position.z);
   scrollFly.endPos = flyEnd;
@@ -1485,16 +1473,18 @@ function cancelScrollFly() {
   scrollFly.target = 0;
   scrollFly.chamberShown = false;
   scrollFly.autoReturn = false;
+  state.screen = 'l1';
+  destroyChamberScene();
+  // Restore the L1 orbit ranges BEFORE repositioning the camera, otherwise the
+  // chamber's 80–400 clamp is still active and update() yanks the camera in.
+  orbitL1Mode();
   threeCamera.position.set(0, 0, CAM_Z);
   threeCamera.lookAt(0, 0, 0); // reset camera orientation
-  // Re-enable orbit controls and reset to home position
   if (orbitControls) {
     orbitControls.target.set(0, 0, 0);
     orbitControls.enabled = true;
     orbitControls.update();
   }
-  state.screen = 'l1';
-  destroyChamberScene();
   // Restore L1 UI
   const l1 = document.getElementById('screen-l1');
   const toolbar = l1.querySelector('.toolbar');
@@ -1507,6 +1497,45 @@ function cancelScrollFly() {
   const ch = document.getElementById('screen-chamber');
   ch.classList.remove('active');
   ch.style.opacity = '';
+}
+
+// Once arrived in a chamber, let the user drag to orbit the memory cluster.
+// The memories sit at different z-depths, so small drags reveal real parallax (3D feel).
+// Azimuth/polar are clamped so the camera keeps facing the cluster instead of spinning away.
+function orbitChamberMode() {
+  if (!orbitControls || !scrollFly.lookTarget) return;
+  orbitControls.target.copy(scrollFly.lookTarget);
+  orbitControls.enableZoom = false;
+  // The fly arrives ~180 units out; keep the clamp range around that so orbit
+  // doesn't yank the camera back (which read as a zoom-in-then-out pop).
+  orbitControls.minDistance = 80;
+  orbitControls.maxDistance = 400;
+  orbitControls.minPolarAngle = Math.PI / 2 - 0.5;
+  orbitControls.maxPolarAngle = Math.PI / 2 + 0.5;
+  orbitControls.minAzimuthAngle = -0.7;
+  orbitControls.maxAzimuthAngle = 0.7;
+  orbitControls.rotateSpeed = 0.5;
+  orbitControls.enabled = true;
+  orbitControls.update();
+}
+
+// Back on L1: full free orbit around the constellation center.
+function orbitL1Mode() {
+  if (!orbitControls) return;
+  orbitControls.target.set(0, 0, 0);
+  // Restore the L1 zoom range. orbitChamberMode() clamps to 80–400 for the
+  // close-up; if we don't reset it here, the camera stays capped at distance 400
+  // on return and can never zoom back out to the home view (~1100).
+  orbitControls.minDistance = 450;
+  orbitControls.maxDistance = 1500;
+  orbitControls.minPolarAngle = 0;
+  orbitControls.maxPolarAngle = Math.PI;
+  orbitControls.minAzimuthAngle = -Infinity;
+  orbitControls.maxAzimuthAngle = Infinity;
+  orbitControls.rotateSpeed = 0.35;
+  orbitControls.enableZoom = true;   // scroll zooms the view on L1
+  orbitControls.enabled = true;
+  orbitControls.update();
 }
 
 function updateScrollFly() {
@@ -1552,6 +1581,7 @@ function updateScrollFly() {
     state.screen = 'chamber';
     // Keep scrollFly active so we can scroll back
     scrollFly.active = false;
+    orbitChamberMode(); // hand control to drag-to-orbit for 3D parallax
   }
 
   // Scrolled all the way back — cancel
@@ -1659,17 +1689,26 @@ function initThreeScene() {
   orbitControls.enableDamping = true;
   orbitControls.dampingFactor = 0.04;
   orbitControls.rotateSpeed = 0.35;
-  orbitControls.enableZoom = false;   // scroll is used for fly-in
+  orbitControls.enableZoom = true;    // scroll zooms the whole view in/out on L1
+  orbitControls.zoomSpeed = 0.8;
+  orbitControls.minDistance = 450;
+  orbitControls.maxDistance = 1500;
   orbitControls.enablePan = false;
   orbitControls.target.set(0, 0, 0);
 
-  // Suppress node clicks after an orbit drag
-  let orbitDragged = false;
-  orbitControls.addEventListener('start', () => { orbitDragged = false; });
-  orbitControls.addEventListener('change', () => { orbitDragged = true; });
+  // Distinguish a real click from a drag by how far the pointer actually moved.
+  // (Relying on OrbitControls' 'change' event was too aggressive: damping inertia
+  //  keeps firing 'change' for many frames after a drag — and even 1px of jitter
+  //  during a click — which swallowed legitimate star clicks.)
+  let downPt = null;
+  ctr.addEventListener('pointerdown', e => { downPt = { x: e.clientX, y: e.clientY }; });
   ctr.addEventListener('click', e => {
-    if (orbitDragged) { e.stopImmediatePropagation(); orbitDragged = false; }
-  }, true); // capture phase, before the existing click handler
+    if (downPt) {
+      const moved = Math.hypot(e.clientX - downPt.x, e.clientY - downPt.y);
+      downPt = null;
+      if (moved > 6) { e.stopImmediatePropagation(); } // it was a drag, not a click
+    }
+  }, true); // capture phase, before the node-selection click handler
 
   /* ── hover ── */
   let hoveredDiv = null;
@@ -2321,14 +2360,6 @@ let chamberTargets = [];   // click targets for memories
 let chamberLabels = [];    // CSS2DObject labels
 let chamberSprites = [];   // all sprites for opacity animation
 
-const MEM_COLORS = {
-  amber:  { c: [255,240,216], m: [244,178,102], e: [168,99,44] },
-  cream:  { c: [251,242,214], m: [236,217,164], e: [136,96,32] },
-  gold:   { c: [254,240,200], m: [232,200,120], e: [128,102,32] },
-  copper: { c: [255,220,192], m: [220,160,100], e: [160,100,50] },
-  rose:   { c: [255,220,224], m: [220,160,170], e: [160,80,100] },
-};
-
 function buildChamberScene(anchorId) {
   destroyChamberScene(); // clean any previous
 
@@ -2370,6 +2401,7 @@ function buildChamberScene(anchorId) {
       bSp.userData.baseScale = bloomScale;
       bSp.userData.tier = m.tier;
       bSp.userData.phase = phase;
+      bSp.userData.isBloom = true; // fade out as camera zooms in (avoids muddy close-ups)
       chamberGroup.add(bSp);
       chamberSprites.push(bSp);
     }
@@ -2403,15 +2435,20 @@ function buildChamberScene(anchorId) {
     chamberGroup.add(line);
     chamberSprites.push(line); // track for opacity animation
 
-    // Label (CSS2D)
-    const lp = polar(m.angle, m.r * MEM_SCALE + m.size + 14);
+    // Label (CSS2D) — always visible in the chamber so users never have to hover.
+    // Trimmed to a short headline to keep the layout spacious; full text on drill-in.
+    // Anchor the label right at the star and nudge it just past the glow so the
+    // pairing reads clearly (a small radial gap that scales with the star size).
+    const lp = polar(m.angle, m.r * MEM_SCALE + m.size * 0.45 + 2);
     const div = document.createElement('div');
-    div.textContent = m.label;
+    div.textContent = headline(m.label);
+    div.title = m.label; // full text on hover
     const fontSize = m.tier === 1 ? '14px' : m.tier === 2 ? '12px' : '10px';
     const color = m.tier === 1 ? 'var(--text-primary)' : m.tier === 2 ? 'var(--text-secondary)' : 'var(--text-muted)';
     div.style.cssText = `font-family:var(--serif);font-style:italic;font-weight:400;font-size:${fontSize};color:${color};letter-spacing:.005em;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 200ms ease`;
     const lbl = new CSS2DObject(div);
     lbl.position.set(lp.x, -lp.y, mz);
+    lbl.userData.pri = m.tier; // collision priority: tier 1 (most important) wins
     chamberGroup.add(lbl);
     chamberLabels.push(lbl);
 
@@ -2434,8 +2471,45 @@ function buildChamberScene(anchorId) {
   captionDiv.style.cssText = 'pointer-events:none;opacity:0;transition:opacity 200ms ease;white-space:nowrap';
   const captionLbl = new CSS2DObject(captionDiv);
   captionLbl.position.set(0, -40, 0);
+  captionLbl.userData.pri = 1.5; // sits just below tier-1 memories in priority
   chamberGroup.add(captionLbl);
   chamberLabels.push(captionLbl);
+}
+
+// Trim a label to a short headline so chamber text stays spacious.
+function headline(text, maxLen = 20) {
+  text = (text || '').trim();
+  if (text.length <= maxLen) return text;
+  let cut = text.slice(0, maxLen);
+  const sp = cut.lastIndexOf(' ');
+  if (sp > 6) cut = cut.slice(0, sp);
+  return cut.replace(/[\s,;:–-]+$/, '') + '…';
+}
+
+// Keep chamber labels from overlapping. Greedy by priority: more important labels
+// claim their screen space first; any lower-priority label that would collide is hidden.
+// Runs each frame while resting in a chamber (camera can orbit, so positions shift).
+function layoutChamberLabels() {
+  if (!chamberLabels.length) return;
+  const items = [];
+  for (const lbl of chamberLabels) {
+    const el = lbl.element;
+    if (!el || el.style.display === 'none') continue;
+    el.style.visibility = 'visible';      // reset so measurement is accurate
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) continue; // off-screen / behind camera
+    items.push({ el, r, pri: lbl.userData?.pri ?? 5 });
+  }
+  items.sort((a, b) => a.pri - b.pri);
+  const placed = [];
+  const pad = 4;
+  for (const it of items) {
+    const collides = placed.some(p =>
+      it.r.left - pad < p.r.right && it.r.right + pad > p.r.left &&
+      it.r.top - pad < p.r.bottom && it.r.bottom + pad > p.r.top);
+    if (collides) it.el.style.visibility = 'hidden';
+    else placed.push(it);
+  }
 }
 
 function setChamberOpacity(t) {
@@ -2443,9 +2517,15 @@ function setChamberOpacity(t) {
   let lineIdx = 0, lineCount = 0;
   chamberSprites.forEach(obj => { if (obj.isLine) lineCount++; });
 
+  // Soft halos read as muddy blobs up close, so fade them out as we zoom in.
+  // zoom: 0 while still far (progress ≤ 0.45) → 1 once nearly arrived (progress ≥ 0.9).
+  const zoom = Math.max(0, Math.min(1, (scrollFly.progress - 0.45) / 0.45));
+  const bloomMul = 1 - zoom; // halos gone when fully zoomed in, crisp cores remain
+
   chamberSprites.forEach(obj => {
     if (obj.isSprite) {
-      obj.material.opacity = t * (obj.userData.baseOp ?? 1);
+      const fade = obj.userData.isBloom ? bloomMul : 1;
+      obj.material.opacity = t * (obj.userData.baseOp ?? 1) * fade;
     } else if (obj.isLine) {
       // Progressive reveal: each connector fades in during its slice of t
       const sliceStart = lineCount > 1 ? (lineIdx / lineCount) * 0.5 : 0;
@@ -2508,8 +2588,10 @@ function threeAnimate() {
       threeCamera.lookAt(lookPt);
     }
   } else if (state.screen === 'chamber') {
-    // Keep constellation rotation frozen while in chamber so memories stay in view
+    // Keep constellation rotation frozen while in chamber so memories stay in view,
+    // but let orbit controls drive the camera so the user can drag for 3D parallax.
     constGroup.rotation.set(0, 0, scrollFly.frozenRotation);
+    if (orbitControls) { orbitControls.enabled = true; orbitControls.update(); }
   } else {
     constGroup.rotation.z = -(t / 1140) * Math.PI * 2;
     if (orbitControls && state.screen === 'l1') {
@@ -2542,6 +2624,9 @@ function threeAnimate() {
 
   threeRenderer.render(threeScene, threeCamera);
   threeCssRenderer.render(threeScene, threeCamera);
+
+  // Resolve label overlaps once the chamber has settled (skip during the fly).
+  if (chamberGroup && state.screen === 'chamber' && !scrollFly.active) layoutChamberLabels();
 }
 
 function startThreeAnim() { if (!threeRAF) threeAnimate(); }
@@ -2688,40 +2773,42 @@ async function init() {
     });
   }
 
-  // Scroll-driven fly: L1 scroll advances fly progress when locked on
-  document.getElementById('screen-l1').addEventListener('wheel', (e) => {
+  // Scroll-driven fly. Listener lives on `window` (not the screen elements)
+  // because L1/chamber screens are pointer-events:none so canvas clicks pass
+  // through — that also suppresses wheel events on those elements, so they'd
+  // never fire there. window always receives wheel regardless of pointer-events.
+  window.addEventListener('wheel', (e) => {
     if (state.panelOpen) return;
-    if (!scrollFly.active) return; // no anchor locked — ignore scroll
-    e.preventDefault();
-    // Scroll down (positive deltaY) = fly deeper, scroll up = pull back
-    scrollFly.target = Math.max(0, Math.min(1, scrollFly.target + e.deltaY * 0.002));
-  }, { passive: false });
 
-  // Chamber scroll: scroll up (negative deltaY) to fly back out
-  document.getElementById('screen-chamber').addEventListener('wheel', (e) => {
-    if (state.panelOpen) return;
-    if (e.deltaY >= 0) return; // only scroll-up pulls back
-    e.preventDefault();
-    // Re-enter scroll-fly mode in reverse
-    const l1 = document.getElementById('screen-l1');
-    if (!l1.classList.contains('active')) {
-      l1.classList.add('active');
-      startThreeAnim();
+    // Already locked on an anchor (flying in, or armed by a click): scroll
+    // advances/retreats fly progress. Down (deltaY>0) = deeper, up = pull back.
+    if (scrollFly.active) {
+      e.preventDefault();
+      scrollFly.target = Math.max(0, Math.min(1, scrollFly.target + e.deltaY * 0.002));
+      return;
     }
-    if (!scrollFly.active) {
-      if (!scrollFly.startPos) {
-        scrollFly.startPos = new THREE.Vector3(0, 0, CAM_Z);
-        scrollFly.endPos = threeCamera.position.clone();
+
+    // At rest inside a chamber: scroll up re-enters scroll-fly in reverse to fly back out.
+    if (state.screen === 'chamber' && e.deltaY < 0) {
+      e.preventDefault();
+      const l1 = document.getElementById('screen-l1');
+      if (!l1.classList.contains('active')) {
+        l1.classList.add('active');
+        startThreeAnim();
       }
+      // Fly out from exactly where the user orbited to (no snap back to the
+      // original arrival framing). Home is the destination at progress 0.
+      scrollFly.startPos = new THREE.Vector3(0, 0, CAM_Z);
+      scrollFly.endPos = threeCamera.position.clone();
       scrollFly.frozenRotation = scrollFly.frozenRotation ?? constGroup.rotation.z;
-      scrollFly.lookTarget = scrollFly.lookTarget ?? null;
+      scrollFly.lookTarget = orbitControls ? orbitControls.target.clone() : scrollFly.lookTarget;
       scrollFly.active = true;
       scrollFly.progress = 1;
       scrollFly.target = 1;
       scrollFly.chamberShown = true;
       scrollFly.autoReturn = false;
+      scrollFly.target = Math.max(0, Math.min(1, scrollFly.target + e.deltaY * 0.002));
     }
-    scrollFly.target = Math.max(0, Math.min(1, scrollFly.target + e.deltaY * 0.002));
   }, { passive: false });
 }
 
