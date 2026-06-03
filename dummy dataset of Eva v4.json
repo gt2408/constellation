@@ -662,11 +662,11 @@
   ],
 
   "openSeats": [
-    { "id": "open-f-1", "layer": "formative",   "position": { "angle": 350 }, "contextPrompt": "a formative neighbor of loss of mentor — still missing" },
-    { "id": "open-f-2", "layer": "formative",   "position": { "angle": 175 }, "contextPrompt": "what shaped you between drama & therapy and your first move abroad?" },
-    { "id": "open-f-3", "layer": "formative",   "position": { "angle":  90 }, "contextPrompt": "authenticity is your strongest behaviour signal — but no formative root yet. where did it come from?" },
-    { "id": "open-i-1", "layer": "intentional", "position": { "angle":   8 }, "contextPrompt": "the consulting → product pivot has a reflection — is there a project memory that goes with it?" },
-    { "id": "open-b-1", "layer": "behaviour",   "position": { "angle": 165 }, "contextPrompt": "you said one weekday evening fully off the laptop — has it happened yet this month?" }
+    { "id": "open-f-1", "layer": "formative",   "position": { "angle": 350 }, "teaser": "a root near loss of mentor", "contextPrompt": "a formative neighbor of loss of mentor — still missing" },
+    { "id": "open-f-2", "layer": "formative",   "position": { "angle": 175 }, "teaser": "between drama and moving abroad", "contextPrompt": "what shaped you between drama & therapy and your first move abroad?" },
+    { "id": "open-f-3", "layer": "formative",   "position": { "angle":  90 }, "teaser": "where authenticity began", "contextPrompt": "authenticity is your strongest behaviour signal — but no formative root yet. where did it come from?" },
+    { "id": "open-i-1", "layer": "intentional", "position": { "angle":   8 }, "teaser": "the memory behind your pivot", "contextPrompt": "the consulting → product pivot has a reflection — is there a project memory that goes with it?" },
+    { "id": "open-b-1", "layer": "behaviour",   "position": { "angle": 165 }, "teaser": "an evening off the laptop", "contextPrompt": "you said one weekday evening fully off the laptop — has it happened yet this month?" }
   ],
 
   "quietNoticings": [

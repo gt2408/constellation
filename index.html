@@ -38,8 +38,8 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
 #screen-l1{background:transparent}
 /* L1 + chamber float UI above the 3D canvas; empty-space clicks fall through to the canvas */
 #screen-l1.active,#screen-chamber.active{pointer-events:none}
-#screen-l1 .toolbar,#screen-l1 .chat-zone,
-#screen-chamber .chamber-bar,#screen-chamber .chat-zone{pointer-events:auto}
+#screen-l1.active .toolbar,#screen-l1.active .chat-zone,
+#screen-chamber.active .chamber-bar,#screen-chamber.active .chat-zone{pointer-events:auto}
 .screen.active{opacity:1;pointer-events:auto}
 
 /* ── ZOOM TRANSITIONS L1 ↔ CHAMBER ── */
@@ -451,7 +451,7 @@ html,body{height:100%;background:var(--bg);color:var(--text-primary);font-family
       <div class="chat-hint"><span><kbd>↵</kbd> to send</span><span class="sep"></span><span>or click a gap above</span></div>
     </div>
     <footer class="footer">
-      <div class="zoom-hint" id="l1-zoom-hint">scroll to zoom · see grouped memories</div>
+      <div class="zoom-hint" id="l1-zoom-hint">scroll to zoom · click a star · drag to look</div>
     </footer>
   </div>
 
@@ -633,7 +633,7 @@ function transformDataset(ds) {
     nodes.push({
       id: s.id, orbit: s.layer, type: 'open',
       angle: s.position.angle, aJit: 0, rJit: 0,
-      prompt: s.contextPrompt || '',
+      prompt: s.teaser || s.contextPrompt || '',   // short punchy hover caption; full prompt lives on click
     });
   });
 
@@ -1348,7 +1348,7 @@ function handleSearch(query) {
   if (!q) {
     threeHandleSearch('');
     pin.classList.remove('visible');
-    hint.textContent = 'scroll to zoom · see grouped memories';
+    hint.textContent = 'scroll to zoom · click a star · drag to look';
     return;
   }
 
@@ -1730,7 +1730,7 @@ function initThreeScene() {
     if (hoveredDiv) { hoveredDiv.style.opacity = '0'; hoveredDiv = null; }
     const tgt = hitTest(e.clientX, e.clientY);
     if (tgt) {
-      if (tgt.labelDiv && tgt.type === 'known') { tgt.labelDiv.style.opacity = '0.88'; hoveredDiv = tgt.labelDiv; }
+      if (tgt.labelDiv && (tgt.type === 'known' || tgt.type === 'open')) { tgt.labelDiv.style.opacity = tgt.type === 'open' ? '0.92' : '0.88'; hoveredDiv = tgt.labelDiv; }
       ctr.style.cursor = 'pointer';
     } else {
       ctr.style.cursor = '';
@@ -2333,17 +2333,21 @@ function _buildNodes() {
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(px,py,nz);
       constGroup.add(mesh);
-      clickTargets.push({ mesh, type:'open', id:n.id, worldPos:new THREE.Vector3(px, py, nz) });
 
+      // Hover caption — a concise phrase naming what this missing star is about.
+      // Hidden until the ring is hovered (see pointermove handler) so the resting
+      // sky stays uncluttered; wraps to a tidy centered block rather than one long line.
+      let openDiv = null;
       if (n.prompt) {
-        const div = document.createElement('div');
-        div.textContent = n.prompt;
-        div.style.cssText = 'font-family:var(--serif);font-style:italic;font-weight:400;font-size:11px;color:var(--text-secondary);opacity:0;transition:opacity 200ms ease;pointer-events:none;white-space:nowrap';
-        const lbl = new CSS2DObject(div);
-        const lp = polar(p.angle, p.r + 20);
+        openDiv = document.createElement('div');
+        openDiv.textContent = n.prompt;
+        openDiv.style.cssText = 'font-family:var(--serif);font-style:italic;font-weight:400;font-size:11.5px;line-height:1.45;color:var(--text-secondary);opacity:0;transition:opacity 220ms ease;pointer-events:none;text-align:center;max-width:190px;text-wrap:balance';
+        const lbl = new CSS2DObject(openDiv);
+        const lp = polar(p.angle, p.r + 30);
         lbl.position.set(lp.x, -lp.y, nz);
         constGroup.add(lbl);
       }
+      clickTargets.push({ mesh, type:'open', id:n.id, labelDiv:openDiv, worldPos:new THREE.Vector3(px, py, nz) });
 
     } else {
       const size = SIZES[n.type];
