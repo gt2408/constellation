@@ -1424,6 +1424,19 @@ function makeBloomTex(hex) {
   ]);
 }
 
+// A hollow socket: dark/empty center ringed by a luminous rim. Reads as a
+// "missing star" — a place waiting to be filled — rather than a faint star.
+function makeRingTex(size) {
+  return makeGlowTex(size, [
+    [0,   'rgba(255,235,190,0)'],     // empty heart — the absence is the signal
+    [0.34,'rgba(255,235,190,0)'],
+    [0.52,'rgba(255,238,200,0.92)'],  // bright inner edge of the rim
+    [0.60,'rgba(248,196,128,0.78)'],
+    [0.74,'rgba(244,178,102,0.22)'],  // soft amber falloff, same family as anchors
+    [1,   'rgba(244,178,102,0)'],
+  ]);
+}
+
 /* ── scene bootstrap ── */
 const SVG_W = 1440, SVG_H = 900, SVG_AR = SVG_W / SVG_H;
 const CAM_FOV = 45, CAM_Z = 1100;
@@ -2306,17 +2319,14 @@ function _buildNodes() {
       sp.scale.set(36,36,1); sp.position.set(px,py,nz);
       constGroup.add(sp);
 
-      const cTex = makeGlowTex(64, [
-        [0,'rgba(255,235,190,0.95)'],[0.3,'rgba(244,178,102,0.6)'],
-        [1,'rgba(244,178,102,0)'],
-      ]);
+      const cTex = makeRingTex(128);
       const cSp = new THREE.Sprite(new THREE.SpriteMaterial({ map:cTex, transparent:true, depthWrite:false }));
-      cSp.scale.set(10,10,1); cSp.position.set(px,py,nz+1);
+      cSp.scale.set(15,15,1); cSp.position.set(px,py,nz+1);
       constGroup.add(cSp);
 
       // An open seat is an invitation — give it a slow, breathing presence so it
       // reads as alive and waiting rather than a static dot.
-      openSeatPulse.push({ outer: sp, inner: cSp, baseOuter: 36, baseInner: 10, phase: idx * 2.39996 });
+      openSeatPulse.push({ outer: sp, inner: cSp, baseOuter: 36, baseInner: 15, phase: idx * 2.39996 });
 
       const geo = new THREE.CircleGeometry(16,16);
       const mat = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, side:THREE.DoubleSide, depthWrite:false });
@@ -2652,9 +2662,9 @@ function threeAnimate() {
       const so = o.baseOuter * (1 + 0.16 * pulse);
       o.outer.scale.set(so, so, 1);
       o.outer.material.opacity = 0.5 + 0.5 * pulse;
-      const si = o.baseInner * (1 + 0.08 * pulse);
+      const si = o.baseInner * (1 + 0.18 * pulse);   // ring breathes wider than a dot would
       o.inner.scale.set(si, si, 1);
-      o.inner.material.opacity = 0.68 + 0.32 * pulse;
+      o.inner.material.opacity = 0.6 + 0.4 * pulse;
     });
   }
 
